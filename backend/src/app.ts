@@ -18,7 +18,9 @@ import { designationsRouter } from "./modules/designations";
 import { employeesRouter } from "./modules/employees";
 import { hospitalsRouter } from "./modules/hospitals";
 import {
+  patientAdvancedRouter,
   patientClinicalRouter,
+  patientMergeRouter,
   patientsRouter,
 } from "./modules/patients";
 import { successResponse } from "./shared/http/api-response";
@@ -96,6 +98,8 @@ app.use("/api/v1/designations", designationsRouter);
 app.use("/api/v1/employees", employeesRouter);
 app.use("/api/v1/patients", patientsRouter);
 app.use("/api/v1/patients", patientClinicalRouter);
+app.use("/api/v1/patients", patientAdvancedRouter);
+app.use("/api/v1/patients", patientMergeRouter);
 
 app.use(notFoundMiddleware);
 app.use(errorMiddleware);
