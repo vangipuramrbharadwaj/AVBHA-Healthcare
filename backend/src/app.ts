@@ -10,12 +10,13 @@ import {
   notFoundMiddleware,
 } from "./middleware/error.middleware";
 import { requestIdMiddleware } from "./middleware/request-id.middleware";
+import { authenticationRouter } from "./modules/authentication/authentication.routes";
+import { dashboardRouter } from "./modules/dashboard";
 import { successResponse } from "./shared/http/api-response";
 
 export const app = express();
 
 app.disable("x-powered-by");
-
 app.set("trust proxy", 1);
 
 app.use(requestIdMiddleware);
@@ -47,6 +48,7 @@ app.use(
       "Authorization",
       "X-Request-ID",
       "X-Branch-ID",
+      "X-Hospital-ID",
     ],
   }),
 );
@@ -75,6 +77,9 @@ app.get("/api/v1/health", async (req, res, next) => {
     next(error);
   }
 });
+
+app.use("/api/v1/auth", authenticationRouter);
+app.use("/api/v1/dashboard", dashboardRouter);
 
 app.use(notFoundMiddleware);
 app.use(errorMiddleware);
