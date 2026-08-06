@@ -112,6 +112,8 @@ model Hospital {
   patientMergeRequests       PatientMergeRequest[]
   patientIdentifiers         PatientIdentifier[]
 
+  appointments Appointment[]
+
   @@map("hospitals")
 }
 
@@ -136,11 +138,12 @@ model HospitalBranch {
   updatedBy String?   @map("updated_by") @db.Uuid
   deletedAt DateTime? @map("deleted_at")
 
-  hospital    Hospital     @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
-  departments Department[]
-  employees   Employee[]
-  users       User[]
-  patients    Patient[]
+  hospital     Hospital      @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  departments  Department[]
+  employees    Employee[]
+  users        User[]
+  patients     Patient[]
+  appointments Appointment[]
 
   @@unique([hospitalId, branchCode])
   @@index([hospitalId])
@@ -168,6 +171,7 @@ model Department {
   employees    Employee[]
   designations Designation[]
   doctors      Doctor[]
+  appointments Appointment[]
 
   @@unique([hospitalId, departmentCode])
   @@index([hospitalId])
@@ -332,9 +336,10 @@ model Doctor {
   updatedBy String?   @map("updated_by") @db.Uuid
   deletedAt DateTime? @map("deleted_at")
 
-  hospital   Hospital   @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
-  employee   Employee   @relation(fields: [employeeId], references: [id], onDelete: Cascade)
-  department Department @relation(fields: [departmentId], references: [id])
+  hospital     Hospital      @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  employee     Employee      @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  department   Department    @relation(fields: [departmentId], references: [id])
+  appointments Appointment[]
 
   @@unique([hospitalId, doctorCode])
   @@index([hospitalId])
@@ -689,6 +694,7 @@ model Patient {
   mergeRequestsAsSource   PatientMergeRequest[]       @relation("MergeSource")
   mergeRequestsAsTarget   PatientMergeRequest[]       @relation("MergeTarget")
   identifiers             PatientIdentifier[]
+  appointments            Appointment[]
 
   @@unique([hospitalId, uhid])
   @@index([hospitalId, status])
@@ -1026,4 +1032,93 @@ model PatientIdentifier {
   @@index([patientId])
   @@index([active])
   @@map("patient_identifiers")
+}
+
+enum AppointmentStatus {
+  BOOKED
+  CONFIRMED
+  CHECKED_IN
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+  RESCHEDULED
+}
+
+enum AppointmentType {
+  CONSULTATION
+  FOLLOW_UP
+  PROCEDURE
+  HEALTH_CHECK
+  VACCINATION
+  TELECONSULTATION
+  EMERGENCY
+  OTHER
+}
+
+enum AppointmentVisitType {
+  NEW
+  FOLLOW_UP
+  REVIEW
+}
+
+enum AppointmentPriority {
+  NORMAL
+  URGENT
+  EMERGENCY
+}
+
+model Appointment {
+  id           String @id @default(uuid()) @db.Uuid
+  hospitalId   String @map("hospital_id") @db.Uuid
+  branchId     String @map("branch_id") @db.Uuid
+  departmentId String @map("department_id") @db.Uuid
+  patientId    String @map("patient_id") @db.Uuid
+  doctorId     String @map("doctor_id") @db.Uuid
+
+  appointmentNumber String               @map("appointment_number") @db.VarChar(40)
+  appointmentDate   DateTime             @map("appointment_date") @db.Date
+  startTime         DateTime             @map("start_time")
+  endTime           DateTime             @map("end_time")
+  durationMinutes   Int                  @default(15) @map("duration_minutes")
+  appointmentType   AppointmentType      @default(CONSULTATION) @map("appointment_type")
+  visitType         AppointmentVisitType @default(NEW) @map("visit_type")
+  priority          AppointmentPriority  @default(NORMAL)
+  status            AppointmentStatus    @default(BOOKED)
+
+  chiefComplaint   String? @map("chief_complaint")
+  reason           String?
+  notes            String?
+  internalNotes    String? @map("internal_notes")
+  source           String? @db.VarChar(50)
+  referredBy       String? @map("referred_by") @db.VarChar(150)
+  confirmationMode String? @map("confirmation_mode") @db.VarChar(30)
+
+  cancelledAt        DateTime? @map("cancelled_at")
+  cancelledBy        String?   @map("cancelled_by") @db.Uuid
+  cancellationReason String?   @map("cancellation_reason")
+  rescheduledFromId  String?   @map("rescheduled_from_id") @db.Uuid
+  checkedInAt        DateTime? @map("checked_in_at")
+  completedAt        DateTime? @map("completed_at")
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  createdBy String?   @map("created_by") @db.Uuid
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  updatedBy String?   @map("updated_by") @db.Uuid
+  deletedAt DateTime? @map("deleted_at")
+
+  hospital   Hospital       @relation(fields: [hospitalId], references: [id], onDelete: Restrict)
+  branch     HospitalBranch @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  department Department     @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+  patient    Patient        @relation(fields: [patientId], references: [id], onDelete: Restrict)
+  doctor     Doctor         @relation(fields: [doctorId], references: [id], onDelete: Restrict)
+
+  @@unique([hospitalId, appointmentNumber])
+  @@index([hospitalId, appointmentDate])
+  @@index([branchId, appointmentDate])
+  @@index([departmentId, appointmentDate])
+  @@index([doctorId, startTime])
+  @@index([patientId, appointmentDate])
+  @@index([status])
+  @@map("appointments")
 }

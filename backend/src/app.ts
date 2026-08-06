@@ -17,6 +17,7 @@ import { departmentsRouter } from "./modules/departments";
 import { designationsRouter } from "./modules/designations";
 import { employeesRouter } from "./modules/employees";
 import { hospitalsRouter } from "./modules/hospitals";
+import { appointmentsRouter } from "./modules/appointments";
 import {
   patientAdvancedRouter,
   patientClinicalRouter,
@@ -97,6 +98,7 @@ app.use("/api/v1/departments", departmentsRouter);
 app.use("/api/v1/designations", designationsRouter);
 app.use("/api/v1/employees", employeesRouter);
 app.use("/api/v1/patients", patientsRouter);
+app.use("/api/v1/appointments", appointmentsRouter);
 app.use("/api/v1/patients", patientClinicalRouter);
 app.use("/api/v1/patients", patientAdvancedRouter);
 app.use("/api/v1/patients", patientMergeRouter);
