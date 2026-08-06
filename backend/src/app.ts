@@ -1,3 +1,4 @@
+import { operationTheatreRouter } from "./modules/operation-theatre";
 import { billingRouter } from "./modules/billing";
 import { pharmacyRouter } from "./modules/pharmacy";
 import { radiologyRouter } from "./modules/radiology";
@@ -111,6 +112,7 @@ app.use("/api/v1/laboratory", laboratoryRouter);
 app.use("/api/v1/radiology", radiologyRouter);
 app.use("/api/v1/pharmacy", pharmacyRouter);
 app.use("/api/v1/billing", billingRouter);
+app.use("/api/v1/operation-theatre", operationTheatreRouter);
 app.use("/api/v1/patients", patientClinicalRouter);
 app.use("/api/v1/patients", patientAdvancedRouter);
 app.use("/api/v1/patients", patientMergeRouter);
