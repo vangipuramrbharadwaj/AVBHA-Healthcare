@@ -8,6 +8,9 @@ import {
   UserStatus,
 } from "@prisma/client";
 
+import { seedDepartments } from "./seed-data/department.seed";
+import { seedDesignations } from "./seed-data/designation.seed";
+
 const prisma = new PrismaClient();
 
 function requiredEnv(name: string): string {
@@ -340,6 +343,17 @@ async function main(): Promise<void> {
           status: RecordStatus.ACTIVE,
         },
       });
+
+      await seedDepartments(
+  transaction,
+  hospital.id,
+  branch.id,
+);
+
+await seedDesignations(
+  transaction,
+  hospital.id,
+);
 
       const permissionIds = new Map<string, string>();
 
