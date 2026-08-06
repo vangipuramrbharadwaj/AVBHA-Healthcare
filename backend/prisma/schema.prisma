@@ -114,6 +114,8 @@ model Hospital {
 
   appointments Appointment[]
 
+  doctorSchedules DoctorSchedule[]
+
   @@map("hospitals")
 }
 
@@ -138,12 +140,13 @@ model HospitalBranch {
   updatedBy String?   @map("updated_by") @db.Uuid
   deletedAt DateTime? @map("deleted_at")
 
-  hospital     Hospital      @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
-  departments  Department[]
-  employees    Employee[]
-  users        User[]
-  patients     Patient[]
-  appointments Appointment[]
+  hospital        Hospital         @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  departments     Department[]
+  employees       Employee[]
+  users           User[]
+  patients        Patient[]
+  appointments    Appointment[]
+  doctorSchedules DoctorSchedule[]
 
   @@unique([hospitalId, branchCode])
   @@index([hospitalId])
@@ -336,10 +339,13 @@ model Doctor {
   updatedBy String?   @map("updated_by") @db.Uuid
   deletedAt DateTime? @map("deleted_at")
 
-  hospital     Hospital      @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
-  employee     Employee      @relation(fields: [employeeId], references: [id], onDelete: Cascade)
-  department   Department    @relation(fields: [departmentId], references: [id])
-  appointments Appointment[]
+  hospital         Hospital                @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  employee         Employee                @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  department       Department              @relation(fields: [departmentId], references: [id])
+  appointments     Appointment[]
+  schedules        DoctorSchedule[]
+  scheduleHolidays DoctorScheduleHoliday[]
+  slotLocks        AppointmentSlotLock[]
 
   @@unique([hospitalId, doctorCode])
   @@index([hospitalId])
@@ -1121,4 +1127,106 @@ model Appointment {
   @@index([patientId, appointmentDate])
   @@index([status])
   @@map("appointments")
+}
+
+model DoctorSchedule {
+  id              String       @id @default(uuid()) @db.Uuid
+  hospitalId      String       @map("hospital_id") @db.Uuid
+  branchId        String       @map("branch_id") @db.Uuid
+  doctorId        String       @map("doctor_id") @db.Uuid
+  dayOfWeek       Int          @map("day_of_week")
+  startTime       String       @map("start_time") @db.VarChar(5)
+  endTime         String       @map("end_time") @db.VarChar(5)
+  slotDuration    Int          @default(15) @map("slot_duration")
+  maxAppointments Int?         @map("max_appointments")
+  effectiveFrom   DateTime     @map("effective_from") @db.Date
+  effectiveTo     DateTime?    @map("effective_to") @db.Date
+  status          RecordStatus @default(ACTIVE)
+  createdAt       DateTime     @default(now()) @map("created_at")
+  createdBy       String?      @map("created_by") @db.Uuid
+  updatedAt       DateTime     @updatedAt @map("updated_at")
+  updatedBy       String?      @map("updated_by") @db.Uuid
+  deletedAt       DateTime?    @map("deleted_at")
+
+  hospital Hospital              @relation(fields: [hospitalId], references: [id], onDelete: Restrict)
+  branch   HospitalBranch        @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  doctor   Doctor                @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  breaks   DoctorScheduleBreak[]
+
+  @@unique([hospitalId, branchId, doctorId, dayOfWeek, startTime, effectiveFrom])
+  @@index([hospitalId])
+  @@index([branchId])
+  @@index([doctorId, dayOfWeek])
+  @@map("doctor_schedules")
+}
+
+model DoctorScheduleBreak {
+  id         String       @id @default(uuid()) @db.Uuid
+  hospitalId String       @map("hospital_id") @db.Uuid
+  doctorId   String       @map("doctor_id") @db.Uuid
+  scheduleId String       @map("schedule_id") @db.Uuid
+  breakName  String       @map("break_name") @db.VarChar(100)
+  startTime  String       @map("start_time") @db.VarChar(5)
+  endTime    String       @map("end_time") @db.VarChar(5)
+  status     RecordStatus @default(ACTIVE)
+  createdAt  DateTime     @default(now()) @map("created_at")
+  createdBy  String?      @map("created_by") @db.Uuid
+  updatedAt  DateTime     @updatedAt @map("updated_at")
+  updatedBy  String?      @map("updated_by") @db.Uuid
+  deletedAt  DateTime?    @map("deleted_at")
+
+  schedule DoctorSchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+
+  @@index([hospitalId])
+  @@index([doctorId])
+  @@index([scheduleId])
+  @@map("doctor_schedule_breaks")
+}
+
+model DoctorScheduleHoliday {
+  id          String       @id @default(uuid()) @db.Uuid
+  hospitalId  String       @map("hospital_id") @db.Uuid
+  branchId    String       @map("branch_id") @db.Uuid
+  doctorId    String       @map("doctor_id") @db.Uuid
+  holidayDate DateTime     @map("holiday_date") @db.Date
+  reason      String?      @db.VarChar(300)
+  allDay      Boolean      @default(true) @map("all_day")
+  startTime   String?      @map("start_time") @db.VarChar(5)
+  endTime     String?      @map("end_time") @db.VarChar(5)
+  status      RecordStatus @default(ACTIVE)
+  createdAt   DateTime     @default(now()) @map("created_at")
+  createdBy   String?      @map("created_by") @db.Uuid
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+  updatedBy   String?      @map("updated_by") @db.Uuid
+  deletedAt   DateTime?    @map("deleted_at")
+
+  doctor Doctor @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+
+  @@index([hospitalId])
+  @@index([branchId])
+  @@index([doctorId, holidayDate])
+  @@map("doctor_schedule_holidays")
+}
+
+model AppointmentSlotLock {
+  id         String    @id @default(uuid()) @db.Uuid
+  hospitalId String    @map("hospital_id") @db.Uuid
+  branchId   String    @map("branch_id") @db.Uuid
+  doctorId   String    @map("doctor_id") @db.Uuid
+  patientId  String?   @map("patient_id") @db.Uuid
+  lockToken  String    @unique @map("lock_token") @db.VarChar(100)
+  slotStart  DateTime  @map("slot_start")
+  slotEnd    DateTime  @map("slot_end")
+  expiresAt  DateTime  @map("expires_at")
+  releasedAt DateTime? @map("released_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  createdBy  String?   @map("created_by") @db.Uuid
+
+  doctor Doctor @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+
+  @@index([hospitalId])
+  @@index([branchId])
+  @@index([doctorId, slotStart])
+  @@index([expiresAt])
+  @@map("appointment_slot_locks")
 }
