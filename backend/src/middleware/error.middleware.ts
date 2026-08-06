@@ -1,5 +1,6 @@
 import type { ErrorRequestHandler, RequestHandler } from "express";
 import { Prisma } from "@prisma/client";
+import { ZodError } from "zod";
 import { env } from "../config/env";
 import { logger } from "../config/logger";
 import { AppError } from "../shared/errors/app-error";
@@ -31,6 +32,18 @@ export const errorMiddleware: ErrorRequestHandler = (
     "Request failed",
   );
 
+  if (error instanceof ZodError) {
+    res.status(400).json(
+      errorResponse(
+        "Request validation failed",
+        "VALIDATION_ERROR",
+        req.requestId,
+        error.flatten(),
+      ),
+    );
+    return;
+  }
+
   if (error instanceof AppError) {
     res.status(error.statusCode).json(
       errorResponse(
@@ -40,7 +53,6 @@ export const errorMiddleware: ErrorRequestHandler = (
         error.details,
       ),
     );
-
     return;
   }
 
@@ -54,7 +66,6 @@ export const errorMiddleware: ErrorRequestHandler = (
           env.NODE_ENV === "development" ? error.meta : undefined,
         ),
       );
-
       return;
     }
 
@@ -66,7 +77,17 @@ export const errorMiddleware: ErrorRequestHandler = (
           req.requestId,
         ),
       );
+      return;
+    }
 
+    if (error.code === "P2003") {
+      res.status(409).json(
+        errorResponse(
+          "This record is referenced by another record and cannot be changed",
+          "REFERENCE_CONFLICT",
+          req.requestId,
+        ),
+      );
       return;
     }
   }

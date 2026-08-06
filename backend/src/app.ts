@@ -11,7 +11,11 @@ import {
 } from "./middleware/error.middleware";
 import { requestIdMiddleware } from "./middleware/request-id.middleware";
 import { authenticationRouter } from "./modules/authentication/authentication.routes";
+import { branchesRouter } from "./modules/branches";
 import { dashboardRouter } from "./modules/dashboard";
+import { departmentsRouter } from "./modules/departments";
+import { designationsRouter } from "./modules/designations";
+import { hospitalsRouter } from "./modules/hospitals";
 import { successResponse } from "./shared/http/api-response";
 
 export const app = express();
@@ -80,6 +84,10 @@ app.get("/api/v1/health", async (req, res, next) => {
 
 app.use("/api/v1/auth", authenticationRouter);
 app.use("/api/v1/dashboard", dashboardRouter);
+app.use("/api/v1/hospitals", hospitalsRouter);
+app.use("/api/v1/branches", branchesRouter);
+app.use("/api/v1/departments", departmentsRouter);
+app.use("/api/v1/designations", designationsRouter);
 
 app.use(notFoundMiddleware);
 app.use(errorMiddleware);
