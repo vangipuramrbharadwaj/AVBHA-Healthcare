@@ -17,7 +17,10 @@ import { departmentsRouter } from "./modules/departments";
 import { designationsRouter } from "./modules/designations";
 import { employeesRouter } from "./modules/employees";
 import { hospitalsRouter } from "./modules/hospitals";
-import { patientsRouter } from "./modules/patients";
+import {
+  patientClinicalRouter,
+  patientsRouter,
+} from "./modules/patients";
 import { successResponse } from "./shared/http/api-response";
 
 export const app = express();
@@ -92,6 +95,7 @@ app.use("/api/v1/departments", departmentsRouter);
 app.use("/api/v1/designations", designationsRouter);
 app.use("/api/v1/employees", employeesRouter);
 app.use("/api/v1/patients", patientsRouter);
+app.use("/api/v1/patients", patientClinicalRouter);
 
 app.use(notFoundMiddleware);
 app.use(errorMiddleware);
