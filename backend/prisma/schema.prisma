@@ -86,14 +86,17 @@ model Hospital {
   updatedBy String?   @map("updated_by") @db.Uuid
   deletedAt DateTime? @map("deleted_at")
 
-  branches     HospitalBranch[]
-  departments  Department[]
-  designations Designation[]
-  employees    Employee[]
-  doctors      Doctor[]
-  users        User[]
-  roles        Role[]
-  auditLogs    AuditLog[]
+  branches       HospitalBranch[]
+  departments    Department[]
+  designations   Designation[]
+  employees      Employee[]
+  doctors        Doctor[]
+  users          User[]
+  roles          Role[]
+  auditLogs      AuditLog[]
+  userSessions   UserSession[]
+  loginAttempts  LoginAttempt[]
+  securityEvents SecurityEvent[]
 
   @@map("hospitals")
 }
@@ -351,11 +354,15 @@ model User {
   updatedBy String?   @map("updated_by") @db.Uuid
   deletedAt DateTime? @map("deleted_at")
 
-  hospital  Hospital        @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
-  branch    HospitalBranch? @relation(fields: [branchId], references: [id], onDelete: SetNull)
-  employee  Employee?       @relation(fields: [employeeId], references: [id], onDelete: SetNull)
-  userRoles UserRole[]
-  auditLogs AuditLog[]
+  hospital            Hospital             @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  branch              HospitalBranch?      @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  employee            Employee?            @relation(fields: [employeeId], references: [id], onDelete: SetNull)
+  userRoles           UserRole[]
+  auditLogs           AuditLog[]
+  sessions            UserSession[]
+  passwordResetTokens PasswordResetToken[]
+  loginAttempts       LoginAttempt[]
+  securityEvents      SecurityEvent[]
 
   @@unique([hospitalId, username])
   @@unique([hospitalId, email])
@@ -461,4 +468,145 @@ model AuditLog {
   @@index([entityType, entityId])
   @@index([eventAt])
   @@map("audit_logs")
+}
+
+enum SessionStatus {
+  ACTIVE
+  REVOKED
+  EXPIRED
+}
+
+enum LoginAttemptResult {
+  SUCCESS
+  INVALID_PASSWORD
+  USER_NOT_FOUND
+  ACCOUNT_LOCKED
+  USER_INACTIVE
+  TWO_FACTOR_REQUIRED
+  TWO_FACTOR_FAILED
+  SESSION_REJECTED
+}
+
+enum SecurityEventType {
+  LOGIN_SUCCESS
+  LOGIN_FAILURE
+  LOGOUT
+  PASSWORD_CHANGED
+  PASSWORD_RESET_REQUESTED
+  PASSWORD_RESET_COMPLETED
+  ACCOUNT_LOCKED
+  ACCOUNT_UNLOCKED
+  SESSION_CREATED
+  SESSION_REVOKED
+  ALL_SESSIONS_REVOKED
+  SUSPICIOUS_LOGIN
+  PERMISSION_CHANGED
+  ROLE_CHANGED
+  TWO_FACTOR_ENABLED
+  TWO_FACTOR_DISABLED
+}
+
+enum SecuritySeverity {
+  INFO
+  WARNING
+  CRITICAL
+}
+
+model UserSession {
+  id               String        @id @default(uuid()) @db.Uuid
+  hospitalId       String        @map("hospital_id") @db.Uuid
+  userId           String        @map("user_id") @db.Uuid
+  refreshTokenHash String        @map("refresh_token_hash")
+  deviceId         String?       @map("device_id") @db.VarChar(150)
+  deviceName       String?       @map("device_name") @db.VarChar(150)
+  deviceType       String?       @map("device_type") @db.VarChar(50)
+  browser          String?       @db.VarChar(100)
+  operatingSystem  String?       @map("operating_system") @db.VarChar(100)
+  ipAddress        String?       @map("ip_address") @db.VarChar(64)
+  userAgent        String?       @map("user_agent")
+  issuedAt         DateTime      @default(now()) @map("issued_at")
+  lastActivityAt   DateTime      @default(now()) @map("last_activity_at")
+  expiresAt        DateTime      @map("expires_at")
+  revokedAt        DateTime?     @map("revoked_at")
+  revokedBy        String?       @map("revoked_by") @db.Uuid
+  revokeReason     String?       @map("revoke_reason") @db.VarChar(250)
+  status           SessionStatus @default(ACTIVE)
+  createdAt        DateTime      @default(now()) @map("created_at")
+  updatedAt        DateTime      @updatedAt @map("updated_at")
+
+  hospital Hospital @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([hospitalId])
+  @@index([userId])
+  @@index([refreshTokenHash])
+  @@index([expiresAt])
+  @@index([status])
+  @@map("user_sessions")
+}
+
+model PasswordResetToken {
+  id          String    @id @default(uuid()) @db.Uuid
+  userId      String    @map("user_id") @db.Uuid
+  tokenHash   String    @unique @map("token_hash")
+  requestedIp String?   @map("requested_ip") @db.VarChar(64)
+  userAgent   String?   @map("user_agent")
+  expiresAt   DateTime  @map("expires_at")
+  usedAt      DateTime? @map("used_at")
+  revokedAt   DateTime? @map("revoked_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("password_reset_tokens")
+}
+
+model LoginAttempt {
+  id          String             @id @default(uuid()) @db.Uuid
+  hospitalId  String?            @map("hospital_id") @db.Uuid
+  userId      String?            @map("user_id") @db.Uuid
+  loginValue  String             @map("login_value") @db.VarChar(180)
+  result      LoginAttemptResult
+  ipAddress   String?            @map("ip_address") @db.VarChar(64)
+  userAgent   String?            @map("user_agent")
+  deviceId    String?            @map("device_id") @db.VarChar(150)
+  deviceName  String?            @map("device_name") @db.VarChar(150)
+  attemptedAt DateTime           @default(now()) @map("attempted_at")
+
+  hospital Hospital? @relation(fields: [hospitalId], references: [id], onDelete: SetNull)
+  user     User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([hospitalId])
+  @@index([userId])
+  @@index([loginValue])
+  @@index([ipAddress])
+  @@index([attemptedAt])
+  @@index([result])
+  @@map("login_attempts")
+}
+
+model SecurityEvent {
+  id          String            @id @default(uuid()) @db.Uuid
+  hospitalId  String?           @map("hospital_id") @db.Uuid
+  userId      String?           @map("user_id") @db.Uuid
+  eventType   SecurityEventType @map("event_type")
+  severity    SecuritySeverity  @default(INFO)
+  description String?           @db.VarChar(500)
+  ipAddress   String?           @map("ip_address") @db.VarChar(64)
+  userAgent   String?           @map("user_agent")
+  deviceId    String?           @map("device_id") @db.VarChar(150)
+  metadata    Json?
+  eventAt     DateTime          @default(now()) @map("event_at")
+
+  hospital Hospital? @relation(fields: [hospitalId], references: [id], onDelete: SetNull)
+  user     User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([hospitalId])
+  @@index([userId])
+  @@index([eventType])
+  @@index([severity])
+  @@index([eventAt])
+  @@map("security_events")
 }
