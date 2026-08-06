@@ -86,17 +86,20 @@ model Hospital {
   updatedBy String?   @map("updated_by") @db.Uuid
   deletedAt DateTime? @map("deleted_at")
 
-  branches       HospitalBranch[]
-  departments    Department[]
-  designations   Designation[]
-  employees      Employee[]
-  doctors        Doctor[]
-  users          User[]
-  roles          Role[]
-  auditLogs      AuditLog[]
-  userSessions   UserSession[]
-  loginAttempts  LoginAttempt[]
-  securityEvents SecurityEvent[]
+  branches                 HospitalBranch[]
+  departments              Department[]
+  designations             Designation[]
+  employees                Employee[]
+  doctors                  Doctor[]
+  users                    User[]
+  roles                    Role[]
+  auditLogs                AuditLog[]
+  userSessions             UserSession[]
+  loginAttempts            LoginAttempt[]
+  securityEvents           SecurityEvent[]
+  patients                 Patient[]
+  patientAddresses         PatientAddress[]
+  patientEmergencyContacts PatientEmergencyContact[]
 
   @@map("hospitals")
 }
@@ -126,6 +129,7 @@ model HospitalBranch {
   departments Department[]
   employees   Employee[]
   users       User[]
+  patients    Patient[]
 
   @@unique([hospitalId, branchCode])
   @@index([hospitalId])
@@ -609,4 +613,115 @@ model SecurityEvent {
   @@index([severity])
   @@index([eventAt])
   @@map("security_events")
+}
+
+model Patient {
+  id         String  @id @default(uuid()) @db.Uuid
+  hospitalId String  @map("hospital_id") @db.Uuid
+  branchId   String? @map("branch_id") @db.Uuid
+  uhid       String  @db.VarChar(40)
+
+  title      String? @db.VarChar(10)
+  firstName  String  @map("first_name") @db.VarChar(100)
+  middleName String? @map("middle_name") @db.VarChar(100)
+  lastName   String? @map("last_name") @db.VarChar(100)
+
+  gender        String?   @db.VarChar(20)
+  dateOfBirth   DateTime? @map("date_of_birth") @db.Date
+  ageYears      Int?      @map("age_years")
+  bloodGroup    String?   @map("blood_group") @db.VarChar(10)
+  maritalStatus String?   @map("marital_status") @db.VarChar(30)
+  nationality   String?   @db.VarChar(80)
+  religion      String?   @db.VarChar(80)
+
+  primaryMobile   String  @map("primary_mobile") @db.VarChar(20)
+  alternateMobile String? @map("alternate_mobile") @db.VarChar(20)
+  email           String? @db.VarChar(150)
+
+  aadhaarNumber  String? @map("aadhaar_number") @db.VarChar(20)
+  panNumber      String? @map("pan_number") @db.VarChar(20)
+  passportNumber String? @map("passport_number") @db.VarChar(30)
+
+  occupation        String? @db.VarChar(120)
+  preferredLanguage String? @map("preferred_language") @db.VarChar(50)
+  referredBy        String? @map("referred_by") @db.VarChar(150)
+  referralSource    String? @map("referral_source") @db.VarChar(80)
+
+  medicalAlerts          String? @map("medical_alerts")
+  allergiesSummary       String? @map("allergies_summary")
+  chronicDiseasesSummary String? @map("chronic_diseases_summary")
+
+  isDeceased Boolean   @default(false) @map("is_deceased")
+  deceasedAt DateTime? @map("deceased_at")
+
+  status RecordStatus @default(ACTIVE)
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  createdBy String?   @map("created_by") @db.Uuid
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  updatedBy String?   @map("updated_by") @db.Uuid
+  deletedAt DateTime? @map("deleted_at")
+
+  hospital          Hospital                  @relation(fields: [hospitalId], references: [id], onDelete: Restrict)
+  branch            HospitalBranch?           @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  addresses         PatientAddress[]
+  emergencyContacts PatientEmergencyContact[]
+
+  @@unique([hospitalId, uhid])
+  @@index([hospitalId, status])
+  @@index([hospitalId, primaryMobile])
+  @@index([hospitalId, firstName, lastName])
+  @@index([hospitalId, createdAt])
+  @@index([branchId])
+  @@map("patients")
+}
+
+model PatientAddress {
+  id         String @id @default(uuid()) @db.Uuid
+  hospitalId String @map("hospital_id") @db.Uuid
+  patientId  String @map("patient_id") @db.Uuid
+
+  addressType  String  @default("CURRENT") @map("address_type") @db.VarChar(30)
+  addressLine1 String  @map("address_line1") @db.VarChar(200)
+  addressLine2 String? @map("address_line2") @db.VarChar(200)
+  landmark     String? @db.VarChar(150)
+  city         String? @db.VarChar(100)
+  district     String? @db.VarChar(100)
+  state        String? @db.VarChar(100)
+  country      String? @default("India") @db.VarChar(100)
+  postalCode   String? @map("postal_code") @db.VarChar(15)
+  isPrimary    Boolean @default(false) @map("is_primary")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  hospital Hospital @relation(fields: [hospitalId], references: [id], onDelete: Restrict)
+  patient  Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@index([hospitalId])
+  @@index([patientId])
+  @@map("patient_addresses")
+}
+
+model PatientEmergencyContact {
+  id         String @id @default(uuid()) @db.Uuid
+  hospitalId String @map("hospital_id") @db.Uuid
+  patientId  String @map("patient_id") @db.Uuid
+
+  contactName     String  @map("contact_name") @db.VarChar(150)
+  relationship    String? @db.VarChar(60)
+  mobile          String  @db.VarChar(20)
+  alternateMobile String? @map("alternate_mobile") @db.VarChar(20)
+  email           String? @db.VarChar(150)
+  isPrimary       Boolean @default(false) @map("is_primary")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  hospital Hospital @relation(fields: [hospitalId], references: [id], onDelete: Restrict)
+  patient  Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@index([hospitalId])
+  @@index([patientId])
+  @@map("patient_emergency_contacts")
 }

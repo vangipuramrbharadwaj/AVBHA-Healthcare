@@ -15,7 +15,9 @@ import { branchesRouter } from "./modules/branches";
 import { dashboardRouter } from "./modules/dashboard";
 import { departmentsRouter } from "./modules/departments";
 import { designationsRouter } from "./modules/designations";
+import { employeesRouter } from "./modules/employees";
 import { hospitalsRouter } from "./modules/hospitals";
+import { patientsRouter } from "./modules/patients";
 import { successResponse } from "./shared/http/api-response";
 
 export const app = express();
@@ -88,6 +90,8 @@ app.use("/api/v1/hospitals", hospitalsRouter);
 app.use("/api/v1/branches", branchesRouter);
 app.use("/api/v1/departments", departmentsRouter);
 app.use("/api/v1/designations", designationsRouter);
+app.use("/api/v1/employees", employeesRouter);
+app.use("/api/v1/patients", patientsRouter);
 
 app.use(notFoundMiddleware);
 app.use(errorMiddleware);
