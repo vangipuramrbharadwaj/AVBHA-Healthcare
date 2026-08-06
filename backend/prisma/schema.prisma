@@ -119,6 +119,8 @@ model Hospital {
   appointmentQueues       AppointmentQueue[]
   appointmentQueueEntries AppointmentQueueEntry[]
 
+  opdVisits OpdVisit[]
+
   @@map("hospitals")
 }
 
@@ -152,6 +154,7 @@ model HospitalBranch {
   doctorSchedules         DoctorSchedule[]
   appointmentQueues       AppointmentQueue[]
   appointmentQueueEntries AppointmentQueueEntry[]
+  opdVisits               OpdVisit[]
 
   @@unique([hospitalId, branchCode])
   @@index([hospitalId])
@@ -182,6 +185,7 @@ model Department {
   appointments            Appointment[]
   appointmentQueues       AppointmentQueue[]
   appointmentQueueEntries AppointmentQueueEntry[]
+  opdVisits               OpdVisit[]
 
   @@unique([hospitalId, departmentCode])
   @@index([hospitalId])
@@ -355,6 +359,7 @@ model Doctor {
   slotLocks               AppointmentSlotLock[]
   appointmentQueues       AppointmentQueue[]
   appointmentQueueEntries AppointmentQueueEntry[]
+  opdVisits               OpdVisit[]
 
   @@unique([hospitalId, doctorCode])
   @@index([hospitalId])
@@ -711,6 +716,7 @@ model Patient {
   identifiers             PatientIdentifier[]
   appointments            Appointment[]
   appointmentQueueEntries AppointmentQueueEntry[]
+  opdVisits               OpdVisit[]
 
   @@unique([hospitalId, uhid])
   @@index([hospitalId, status])
@@ -1129,6 +1135,7 @@ model Appointment {
   patient    Patient                @relation(fields: [patientId], references: [id], onDelete: Restrict)
   doctor     Doctor                 @relation(fields: [doctorId], references: [id], onDelete: Restrict)
   queueEntry AppointmentQueueEntry?
+  opdVisit   OpdVisit?
 
   @@unique([hospitalId, appointmentNumber])
   @@index([hospitalId, appointmentDate])
@@ -1349,4 +1356,217 @@ model AppointmentQueueEntry {
   @@index([patientId, checkInAt])
   @@index([priority, status])
   @@map("appointment_queue_entries")
+}
+
+enum OpdVisitStatus {
+  REGISTERED
+  WAITING
+  IN_CONSULTATION
+  COMPLETED
+  CANCELLED
+}
+
+enum OpdVisitType {
+  NEW
+  FOLLOW_UP
+  REVIEW
+  EMERGENCY
+}
+
+enum ConsultationStatus {
+  DRAFT
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum DiagnosisType {
+  PROVISIONAL
+  FINAL
+  DIFFERENTIAL
+}
+
+enum ClinicalOrderType {
+  LABORATORY
+  RADIOLOGY
+  PROCEDURE
+  PHARMACY
+}
+
+model OpdVisit {
+  id             String         @id @default(uuid()) @db.Uuid
+  hospitalId     String         @map("hospital_id") @db.Uuid
+  branchId       String         @map("branch_id") @db.Uuid
+  departmentId   String         @map("department_id") @db.Uuid
+  doctorId       String         @map("doctor_id") @db.Uuid
+  patientId      String         @map("patient_id") @db.Uuid
+  appointmentId  String?        @unique @map("appointment_id") @db.Uuid
+  visitNumber    String         @map("visit_number") @db.VarChar(40)
+  visitDate      DateTime       @map("visit_date")
+  visitType      OpdVisitType   @default(NEW) @map("visit_type")
+  status         OpdVisitStatus @default(REGISTERED)
+  chiefComplaint String?        @map("chief_complaint")
+  notes          String?
+  completedAt    DateTime?      @map("completed_at")
+  createdAt      DateTime       @default(now()) @map("created_at")
+  createdBy      String?        @map("created_by") @db.Uuid
+  updatedAt      DateTime       @updatedAt @map("updated_at")
+  updatedBy      String?        @map("updated_by") @db.Uuid
+  deletedAt      DateTime?      @map("deleted_at")
+
+  hospital     Hospital           @relation(fields: [hospitalId], references: [id], onDelete: Restrict)
+  branch       HospitalBranch     @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  department   Department         @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+  doctor       Doctor             @relation(fields: [doctorId], references: [id], onDelete: Restrict)
+  patient      Patient            @relation(fields: [patientId], references: [id], onDelete: Restrict)
+  appointment  Appointment?       @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+  vitals       OpdVitalSign[]
+  consultation OpdConsultation?
+  diagnoses    OpdDiagnosis[]
+  prescription OpdPrescription?
+  orders       OpdClinicalOrder[]
+  followUps    OpdFollowUp[]
+
+  @@unique([hospitalId, visitNumber])
+  @@index([hospitalId, visitDate])
+  @@index([patientId, visitDate])
+  @@index([doctorId, visitDate])
+  @@index([status])
+  @@map("opd_visits")
+}
+
+model OpdVitalSign {
+  id                 String   @id @default(uuid()) @db.Uuid
+  hospitalId         String   @map("hospital_id") @db.Uuid
+  visitId            String   @map("visit_id") @db.Uuid
+  temperatureCelsius Decimal? @map("temperature_celsius") @db.Decimal(5, 2)
+  pulseRate          Int?     @map("pulse_rate")
+  systolicBp         Int?     @map("systolic_bp")
+  diastolicBp        Int?     @map("diastolic_bp")
+  spo2               Int?
+  heightCm           Decimal? @map("height_cm") @db.Decimal(7, 2)
+  weightKg           Decimal? @map("weight_kg") @db.Decimal(7, 2)
+  bmi                Decimal? @db.Decimal(7, 2)
+  notes              String?
+  recordedAt         DateTime @default(now()) @map("recorded_at")
+  recordedBy         String?  @map("recorded_by") @db.Uuid
+
+  visit OpdVisit @relation(fields: [visitId], references: [id], onDelete: Cascade)
+
+  @@index([hospitalId])
+  @@index([visitId])
+  @@map("opd_vital_signs")
+}
+
+model OpdConsultation {
+  id               String             @id @default(uuid()) @db.Uuid
+  hospitalId       String             @map("hospital_id") @db.Uuid
+  visitId          String             @unique @map("visit_id") @db.Uuid
+  status           ConsultationStatus @default(DRAFT)
+  history          String?
+  examinationNotes String?            @map("examination_notes")
+  clinicalNotes    String?            @map("clinical_notes")
+  advice           String?
+  doctorNotes      String?            @map("doctor_notes")
+  startedAt        DateTime?          @map("started_at")
+  completedAt      DateTime?          @map("completed_at")
+  createdAt        DateTime           @default(now()) @map("created_at")
+  createdBy        String?            @map("created_by") @db.Uuid
+  updatedAt        DateTime           @updatedAt @map("updated_at")
+  updatedBy        String?            @map("updated_by") @db.Uuid
+
+  visit OpdVisit @relation(fields: [visitId], references: [id], onDelete: Cascade)
+
+  @@index([hospitalId])
+  @@map("opd_consultations")
+}
+
+model OpdDiagnosis {
+  id            String        @id @default(uuid()) @db.Uuid
+  hospitalId    String        @map("hospital_id") @db.Uuid
+  visitId       String        @map("visit_id") @db.Uuid
+  diagnosisType DiagnosisType @default(PROVISIONAL) @map("diagnosis_type")
+  diagnosisCode String?       @map("diagnosis_code") @db.VarChar(30)
+  diagnosisName String        @map("diagnosis_name") @db.VarChar(250)
+  description   String?
+  isPrimary     Boolean       @default(false) @map("is_primary")
+  createdAt     DateTime      @default(now()) @map("created_at")
+  createdBy     String?       @map("created_by") @db.Uuid
+
+  visit OpdVisit @relation(fields: [visitId], references: [id], onDelete: Cascade)
+
+  @@index([hospitalId])
+  @@index([visitId])
+  @@map("opd_diagnoses")
+}
+
+model OpdPrescription {
+  id         String   @id @default(uuid()) @db.Uuid
+  hospitalId String   @map("hospital_id") @db.Uuid
+  visitId    String   @unique @map("visit_id") @db.Uuid
+  notes      String?
+  createdAt  DateTime @default(now()) @map("created_at")
+  createdBy  String?  @map("created_by") @db.Uuid
+  updatedAt  DateTime @updatedAt @map("updated_at")
+  updatedBy  String?  @map("updated_by") @db.Uuid
+
+  visit OpdVisit              @relation(fields: [visitId], references: [id], onDelete: Cascade)
+  items OpdPrescriptionItem[]
+
+  @@index([hospitalId])
+  @@map("opd_prescriptions")
+}
+
+model OpdPrescriptionItem {
+  id             String   @id @default(uuid()) @db.Uuid
+  hospitalId     String   @map("hospital_id") @db.Uuid
+  prescriptionId String   @map("prescription_id") @db.Uuid
+  medicineName   String   @map("medicine_name") @db.VarChar(200)
+  dosage         String?  @db.VarChar(100)
+  frequency      String?  @db.VarChar(100)
+  durationDays   Int?     @map("duration_days")
+  instructions   String?
+  createdAt      DateTime @default(now()) @map("created_at")
+  createdBy      String?  @map("created_by") @db.Uuid
+
+  prescription OpdPrescription @relation(fields: [prescriptionId], references: [id], onDelete: Cascade)
+
+  @@index([hospitalId])
+  @@index([prescriptionId])
+  @@map("opd_prescription_items")
+}
+
+model OpdClinicalOrder {
+  id           String            @id @default(uuid()) @db.Uuid
+  hospitalId   String            @map("hospital_id") @db.Uuid
+  visitId      String            @map("visit_id") @db.Uuid
+  orderType    ClinicalOrderType @map("order_type")
+  orderName    String            @map("order_name") @db.VarChar(250)
+  instructions String?
+  priority     String            @default("NORMAL") @db.VarChar(20)
+  orderedAt    DateTime          @default(now()) @map("ordered_at")
+  orderedBy    String?           @map("ordered_by") @db.Uuid
+
+  visit OpdVisit @relation(fields: [visitId], references: [id], onDelete: Cascade)
+
+  @@index([hospitalId])
+  @@index([visitId])
+  @@map("opd_clinical_orders")
+}
+
+model OpdFollowUp {
+  id           String   @id @default(uuid()) @db.Uuid
+  hospitalId   String   @map("hospital_id") @db.Uuid
+  visitId      String   @map("visit_id") @db.Uuid
+  followUpDate DateTime @map("follow_up_date") @db.Date
+  reason       String?
+  notes        String?
+  createdAt    DateTime @default(now()) @map("created_at")
+  createdBy    String?  @map("created_by") @db.Uuid
+
+  visit OpdVisit @relation(fields: [visitId], references: [id], onDelete: Cascade)
+
+  @@index([hospitalId])
+  @@index([visitId])
+  @@map("opd_follow_ups")
 }
