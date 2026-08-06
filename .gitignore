@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+
+# Build
+dist/
+build/
+
+# Environment
+.env
+.env.*
+
+# Logs
+*.log
+
+# macOS
+.DS_Store
+
+# VS Code
+.vscode/settings.json
+
+# Uploads
+uploads/
+
+# Runtime
+.run/
+
+# Coverage
+coverage/

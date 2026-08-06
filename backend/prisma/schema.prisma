@@ -1,0 +1,464 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum RecordStatus {
+  ACTIVE
+  INACTIVE
+  DRAFT
+  ARCHIVED
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  LOCKED
+  SUSPENDED
+}
+
+enum EmploymentType {
+  PERMANENT
+  CONTRACT
+  PART_TIME
+  VISITING
+  INTERN
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+  PREFER_NOT_TO_SAY
+}
+
+enum DataScope {
+  PLATFORM
+  HOSPITAL
+  BRANCH
+  DEPARTMENT
+  OWN
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  LOGIN
+  LOGOUT
+  VIEW
+  PRINT
+  EXPORT
+  APPROVE
+  REJECT
+}
+
+model Hospital {
+  id                 String    @id @default(uuid()) @db.Uuid
+  hospitalCode       String    @unique @map("hospital_code") @db.VarChar(30)
+  legalName          String    @map("legal_name") @db.VarChar(200)
+  displayName        String    @map("display_name") @db.VarChar(150)
+  registrationNumber String?   @map("registration_number") @db.VarChar(100)
+  gstin              String?   @db.VarChar(20)
+  pan                String?   @db.VarChar(15)
+  email              String    @db.VarChar(150)
+  phone              String    @db.VarChar(20)
+  alternatePhone     String?   @map("alternate_phone") @db.VarChar(20)
+  addressLine1       String    @map("address_line1") @db.VarChar(200)
+  addressLine2       String?   @map("address_line2") @db.VarChar(200)
+  city               String    @db.VarChar(100)
+  state              String    @db.VarChar(100)
+  country            String    @default("India") @db.VarChar(100)
+  postalCode         String    @map("postal_code") @db.VarChar(15)
+  timezone           String    @default("Asia/Kolkata") @db.VarChar(60)
+  currencyCode       String    @default("INR") @map("currency_code") @db.Char(3)
+  logoPath           String?   @map("logo_path")
+  licenseExpiryDate  DateTime? @map("license_expiry_date") @db.Date
+  active             Boolean   @default(true)
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  createdBy String?   @map("created_by") @db.Uuid
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  updatedBy String?   @map("updated_by") @db.Uuid
+  deletedAt DateTime? @map("deleted_at")
+
+  branches     HospitalBranch[]
+  departments  Department[]
+  designations Designation[]
+  employees    Employee[]
+  doctors      Doctor[]
+  users        User[]
+  roles        Role[]
+  auditLogs    AuditLog[]
+
+  @@map("hospitals")
+}
+
+model HospitalBranch {
+  id           String       @id @default(uuid()) @db.Uuid
+  hospitalId   String       @map("hospital_id") @db.Uuid
+  branchCode   String       @map("branch_code") @db.VarChar(30)
+  branchName   String       @map("branch_name") @db.VarChar(150)
+  branchType   String       @default("HOSPITAL") @map("branch_type") @db.VarChar(30)
+  email        String?      @db.VarChar(150)
+  phone        String       @db.VarChar(20)
+  address      String
+  city         String?      @db.VarChar(100)
+  state        String?      @db.VarChar(100)
+  postalCode   String?      @map("postal_code") @db.VarChar(15)
+  isMainBranch Boolean      @default(false) @map("is_main_branch")
+  status       RecordStatus @default(ACTIVE)
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  createdBy String?   @map("created_by") @db.Uuid
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  updatedBy String?   @map("updated_by") @db.Uuid
+  deletedAt DateTime? @map("deleted_at")
+
+  hospital    Hospital     @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  departments Department[]
+  employees   Employee[]
+  users       User[]
+
+  @@unique([hospitalId, branchCode])
+  @@index([hospitalId])
+  @@map("hospital_branches")
+}
+
+model Department {
+  id             String       @id @default(uuid()) @db.Uuid
+  hospitalId     String       @map("hospital_id") @db.Uuid
+  branchId       String?      @map("branch_id") @db.Uuid
+  departmentCode String       @map("department_code") @db.VarChar(30)
+  departmentName String       @map("department_name") @db.VarChar(120)
+  departmentType String       @default("CLINICAL") @map("department_type") @db.VarChar(30)
+  description    String?
+  status         RecordStatus @default(ACTIVE)
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  createdBy String?   @map("created_by") @db.Uuid
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  updatedBy String?   @map("updated_by") @db.Uuid
+  deletedAt DateTime? @map("deleted_at")
+
+  hospital     Hospital        @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  branch       HospitalBranch? @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  employees    Employee[]
+  designations Designation[]
+  doctors      Doctor[]
+
+  @@unique([hospitalId, departmentCode])
+  @@index([hospitalId])
+  @@index([branchId])
+  @@map("departments")
+}
+
+model Designation {
+  id              String       @id @default(uuid()) @db.Uuid
+  hospitalId      String       @map("hospital_id") @db.Uuid
+  departmentId    String?      @map("department_id") @db.Uuid
+  designationCode String       @map("designation_code") @db.VarChar(30)
+  designationName String       @map("designation_name") @db.VarChar(120)
+  description     String?
+  status          RecordStatus @default(ACTIVE)
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  createdBy String?   @map("created_by") @db.Uuid
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  updatedBy String?   @map("updated_by") @db.Uuid
+  deletedAt DateTime? @map("deleted_at")
+
+  hospital   Hospital    @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  department Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  employees  Employee[]
+
+  @@unique([hospitalId, designationCode])
+  @@index([hospitalId])
+  @@index([departmentId])
+  @@map("designations")
+}
+
+model Employee {
+  id                 String  @id @default(uuid()) @db.Uuid
+  hospitalId         String  @map("hospital_id") @db.Uuid
+  branchId           String? @map("branch_id") @db.Uuid
+  departmentId       String  @map("department_id") @db.Uuid
+  designationId      String  @map("designation_id") @db.Uuid
+  reportingManagerId String? @map("reporting_manager_id") @db.Uuid
+
+  employeeCode  String    @map("employee_code") @db.VarChar(30)
+  title         String?   @db.VarChar(10)
+  firstName     String    @map("first_name") @db.VarChar(80)
+  middleName    String?   @map("middle_name") @db.VarChar(80)
+  lastName      String?   @map("last_name") @db.VarChar(80)
+  gender        Gender?
+  dateOfBirth   DateTime? @map("date_of_birth") @db.Date
+  bloodGroup    String?   @map("blood_group") @db.VarChar(5)
+  maritalStatus String?   @map("marital_status") @db.VarChar(20)
+  nationality   String?   @default("Indian") @db.VarChar(80)
+  religion      String?   @db.VarChar(80)
+
+  mobile          String  @db.VarChar(20)
+  alternateMobile String? @map("alternate_mobile") @db.VarChar(20)
+  email           String? @db.VarChar(150)
+  addressLine1    String? @map("address_line1") @db.VarChar(200)
+  addressLine2    String? @map("address_line2") @db.VarChar(200)
+  city            String? @db.VarChar(100)
+  state           String? @db.VarChar(100)
+  country         String? @default("India") @db.VarChar(100)
+  postalCode      String? @map("postal_code") @db.VarChar(15)
+
+  aadhaarNumber  String? @map("aadhaar_number") @db.VarChar(20)
+  panNumber      String? @map("pan_number") @db.VarChar(15)
+  passportNumber String? @map("passport_number") @db.VarChar(30)
+
+  emergencyContactName  String? @map("emergency_contact_name") @db.VarChar(150)
+  emergencyContactPhone String? @map("emergency_contact_phone") @db.VarChar(20)
+  emergencyRelationship String? @map("emergency_relationship") @db.VarChar(50)
+
+  employmentType   EmploymentType @default(PERMANENT) @map("employment_type")
+  joiningDate      DateTime       @map("joining_date") @db.Date
+  confirmationDate DateTime?      @map("confirmation_date") @db.Date
+  probationEndDate DateTime?      @map("probation_end_date") @db.Date
+  relievingDate    DateTime?      @map("relieving_date") @db.Date
+
+  basicSalary       Decimal? @map("basic_salary") @db.Decimal(14, 2)
+  bankName          String?  @map("bank_name") @db.VarChar(150)
+  bankAccountNumber String?  @map("bank_account_number") @db.VarChar(50)
+  ifscCode          String?  @map("ifsc_code") @db.VarChar(20)
+  pfNumber          String?  @map("pf_number") @db.VarChar(50)
+  esiNumber         String?  @map("esi_number") @db.VarChar(50)
+
+  photoPath     String?      @map("photo_path")
+  signaturePath String?      @map("signature_path")
+  status        RecordStatus @default(ACTIVE)
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  createdBy String?   @map("created_by") @db.Uuid
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  updatedBy String?   @map("updated_by") @db.Uuid
+  deletedAt DateTime? @map("deleted_at")
+
+  hospital         Hospital           @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  branch           HospitalBranch?    @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  department       Department         @relation(fields: [departmentId], references: [id])
+  designation      Designation        @relation(fields: [designationId], references: [id])
+  reportingManager Employee?          @relation("EmployeeReporting", fields: [reportingManagerId], references: [id], onDelete: SetNull)
+  directReports    Employee[]         @relation("EmployeeReporting")
+  doctor           Doctor?
+  user             User?
+  documents        EmployeeDocument[]
+
+  @@unique([hospitalId, employeeCode])
+  @@index([hospitalId])
+  @@index([branchId])
+  @@index([departmentId])
+  @@index([designationId])
+  @@index([reportingManagerId])
+  @@map("employees")
+}
+
+model EmployeeDocument {
+  id         String @id @default(uuid()) @db.Uuid
+  hospitalId String @map("hospital_id") @db.Uuid
+  employeeId String @map("employee_id") @db.Uuid
+
+  documentType String    @map("document_type") @db.VarChar(50)
+  documentName String    @map("document_name") @db.VarChar(200)
+  filePath     String    @map("file_path")
+  mimeType     String?   @map("mime_type") @db.VarChar(100)
+  fileSize     BigInt?   @map("file_size")
+  documentDate DateTime? @map("document_date") @db.Date
+  expiryDate   DateTime? @map("expiry_date") @db.Date
+  verified     Boolean   @default(false)
+  verifiedBy   String?   @map("verified_by") @db.Uuid
+  verifiedAt   DateTime? @map("verified_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  createdBy String?  @map("created_by") @db.Uuid
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([hospitalId])
+  @@index([employeeId])
+  @@map("employee_documents")
+}
+
+model Doctor {
+  id           String @id @default(uuid()) @db.Uuid
+  hospitalId   String @map("hospital_id") @db.Uuid
+  employeeId   String @unique @map("employee_id") @db.Uuid
+  departmentId String @map("department_id") @db.Uuid
+
+  doctorCode                String  @map("doctor_code") @db.VarChar(30)
+  medicalRegistrationNumber String  @map("medical_registration_number") @db.VarChar(80)
+  registrationCouncil       String? @map("registration_council") @db.VarChar(120)
+  qualification             String
+  specialization            String  @db.VarChar(150)
+
+  consultationFee            Decimal      @default(0) @map("consultation_fee") @db.Decimal(12, 2)
+  followupFee                Decimal?     @default(0) @map("followup_fee") @db.Decimal(12, 2)
+  emergencyFee               Decimal?     @default(0) @map("emergency_fee") @db.Decimal(12, 2)
+  averageConsultationMinutes Int?         @default(15) @map("average_consultation_minutes")
+  isVisitingConsultant       Boolean      @default(false) @map("is_visiting_consultant")
+  status                     RecordStatus @default(ACTIVE)
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  createdBy String?   @map("created_by") @db.Uuid
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  updatedBy String?   @map("updated_by") @db.Uuid
+  deletedAt DateTime? @map("deleted_at")
+
+  hospital   Hospital   @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  employee   Employee   @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  department Department @relation(fields: [departmentId], references: [id])
+
+  @@unique([hospitalId, doctorCode])
+  @@index([hospitalId])
+  @@index([departmentId])
+  @@map("doctors")
+}
+
+model User {
+  id         String  @id @default(uuid()) @db.Uuid
+  hospitalId String  @map("hospital_id") @db.Uuid
+  branchId   String? @map("branch_id") @db.Uuid
+  employeeId String? @unique @map("employee_id") @db.Uuid
+
+  fullName              String     @map("full_name") @db.VarChar(150)
+  username              String     @db.VarChar(100)
+  email                 String?    @db.VarChar(150)
+  phone                 String?    @db.VarChar(20)
+  passwordHash          String     @map("password_hash")
+  passwordChangedAt     DateTime?  @map("password_changed_at")
+  mustChangePassword    Boolean    @default(true) @map("must_change_password")
+  failedLoginCount      Int        @default(0) @map("failed_login_count")
+  lockedUntil           DateTime?  @map("locked_until")
+  lastLoginAt           DateTime?  @map("last_login_at")
+  lastLoginIp           String?    @map("last_login_ip") @db.VarChar(64)
+  sessionTimeoutMinutes Int        @default(30) @map("session_timeout_minutes")
+  twoFactorEnabled      Boolean    @default(false) @map("two_factor_enabled")
+  status                UserStatus @default(ACTIVE)
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  createdBy String?   @map("created_by") @db.Uuid
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  updatedBy String?   @map("updated_by") @db.Uuid
+  deletedAt DateTime? @map("deleted_at")
+
+  hospital  Hospital        @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  branch    HospitalBranch? @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  employee  Employee?       @relation(fields: [employeeId], references: [id], onDelete: SetNull)
+  userRoles UserRole[]
+  auditLogs AuditLog[]
+
+  @@unique([hospitalId, username])
+  @@unique([hospitalId, email])
+  @@index([hospitalId])
+  @@index([branchId])
+  @@map("users")
+}
+
+model Role {
+  id         String  @id @default(uuid()) @db.Uuid
+  hospitalId String? @map("hospital_id") @db.Uuid
+
+  roleCode     String       @map("role_code") @db.VarChar(50)
+  roleName     String       @map("role_name") @db.VarChar(100)
+  description  String?
+  isSystemRole Boolean      @default(false) @map("is_system_role")
+  dataScope    DataScope    @default(HOSPITAL) @map("data_scope")
+  status       RecordStatus @default(ACTIVE)
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  createdBy String?   @map("created_by") @db.Uuid
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  updatedBy String?   @map("updated_by") @db.Uuid
+  deletedAt DateTime? @map("deleted_at")
+
+  hospital        Hospital?        @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  rolePermissions RolePermission[]
+  userRoles       UserRole[]
+
+  @@unique([hospitalId, roleCode])
+  @@index([hospitalId])
+  @@map("roles")
+}
+
+model Permission {
+  id             String  @id @default(uuid()) @db.Uuid
+  permissionCode String  @unique @map("permission_code") @db.VarChar(120)
+  moduleCode     String  @map("module_code") @db.VarChar(60)
+  actionCode     String  @map("action_code") @db.VarChar(30)
+  description    String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  rolePermissions RolePermission[]
+
+  @@map("permissions")
+}
+
+model RolePermission {
+  roleId       String @map("role_id") @db.Uuid
+  permissionId String @map("permission_id") @db.Uuid
+
+  createdAt DateTime @default(now()) @map("created_at")
+  createdBy String?  @map("created_by") @db.Uuid
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@index([permissionId])
+  @@map("role_permissions")
+}
+
+model UserRole {
+  userId        String    @map("user_id") @db.Uuid
+  roleId        String    @map("role_id") @db.Uuid
+  effectiveFrom DateTime  @default(now()) @map("effective_from") @db.Date
+  effectiveTo   DateTime? @map("effective_to") @db.Date
+
+  createdAt DateTime @default(now()) @map("created_at")
+  createdBy String?  @map("created_by") @db.Uuid
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+  @@index([roleId])
+  @@map("user_roles")
+}
+
+model AuditLog {
+  id         String  @id @default(uuid()) @db.Uuid
+  hospitalId String? @map("hospital_id") @db.Uuid
+  userId     String? @map("user_id") @db.Uuid
+
+  action     AuditAction
+  module     String      @db.VarChar(60)
+  entityType String?     @map("entity_type") @db.VarChar(100)
+  entityId   String?     @map("entity_id") @db.Uuid
+  oldValues  Json?       @map("old_values")
+  newValues  Json?       @map("new_values")
+  ipAddress  String?     @map("ip_address") @db.VarChar(64)
+  userAgent  String?     @map("user_agent")
+  eventAt    DateTime    @default(now()) @map("event_at")
+
+  hospital Hospital? @relation(fields: [hospitalId], references: [id], onDelete: SetNull)
+  user     User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([hospitalId])
+  @@index([userId])
+  @@index([module])
+  @@index([entityType, entityId])
+  @@index([eventAt])
+  @@map("audit_logs")
+}
