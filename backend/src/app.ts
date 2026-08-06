@@ -1,3 +1,4 @@
+import { ipdRouter } from "./modules/ipd";
 import { opdRouter } from "./modules/opd";
 import cors from "cors";
 import express from "express";
@@ -101,6 +102,7 @@ app.use("/api/v1/employees", employeesRouter);
 app.use("/api/v1/patients", patientsRouter);
 app.use("/api/v1/appointments", appointmentsRouter);
 app.use("/api/v1/opd", opdRouter);
+app.use("/api/v1/ipd", ipdRouter);
 app.use("/api/v1/patients", patientClinicalRouter);
 app.use("/api/v1/patients", patientAdvancedRouter);
 app.use("/api/v1/patients", patientMergeRouter);
