@@ -116,6 +116,9 @@ model Hospital {
 
   doctorSchedules DoctorSchedule[]
 
+  appointmentQueues       AppointmentQueue[]
+  appointmentQueueEntries AppointmentQueueEntry[]
+
   @@map("hospitals")
 }
 
@@ -140,13 +143,15 @@ model HospitalBranch {
   updatedBy String?   @map("updated_by") @db.Uuid
   deletedAt DateTime? @map("deleted_at")
 
-  hospital        Hospital         @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
-  departments     Department[]
-  employees       Employee[]
-  users           User[]
-  patients        Patient[]
-  appointments    Appointment[]
-  doctorSchedules DoctorSchedule[]
+  hospital                Hospital                @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  departments             Department[]
+  employees               Employee[]
+  users                   User[]
+  patients                Patient[]
+  appointments            Appointment[]
+  doctorSchedules         DoctorSchedule[]
+  appointmentQueues       AppointmentQueue[]
+  appointmentQueueEntries AppointmentQueueEntry[]
 
   @@unique([hospitalId, branchCode])
   @@index([hospitalId])
@@ -169,12 +174,14 @@ model Department {
   updatedBy String?   @map("updated_by") @db.Uuid
   deletedAt DateTime? @map("deleted_at")
 
-  hospital     Hospital        @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
-  branch       HospitalBranch? @relation(fields: [branchId], references: [id], onDelete: SetNull)
-  employees    Employee[]
-  designations Designation[]
-  doctors      Doctor[]
-  appointments Appointment[]
+  hospital                Hospital                @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  branch                  HospitalBranch?         @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  employees               Employee[]
+  designations            Designation[]
+  doctors                 Doctor[]
+  appointments            Appointment[]
+  appointmentQueues       AppointmentQueue[]
+  appointmentQueueEntries AppointmentQueueEntry[]
 
   @@unique([hospitalId, departmentCode])
   @@index([hospitalId])
@@ -339,13 +346,15 @@ model Doctor {
   updatedBy String?   @map("updated_by") @db.Uuid
   deletedAt DateTime? @map("deleted_at")
 
-  hospital         Hospital                @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
-  employee         Employee                @relation(fields: [employeeId], references: [id], onDelete: Cascade)
-  department       Department              @relation(fields: [departmentId], references: [id])
-  appointments     Appointment[]
-  schedules        DoctorSchedule[]
-  scheduleHolidays DoctorScheduleHoliday[]
-  slotLocks        AppointmentSlotLock[]
+  hospital                Hospital                @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  employee                Employee                @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  department              Department              @relation(fields: [departmentId], references: [id])
+  appointments            Appointment[]
+  schedules               DoctorSchedule[]
+  scheduleHolidays        DoctorScheduleHoliday[]
+  slotLocks               AppointmentSlotLock[]
+  appointmentQueues       AppointmentQueue[]
+  appointmentQueueEntries AppointmentQueueEntry[]
 
   @@unique([hospitalId, doctorCode])
   @@index([hospitalId])
@@ -701,6 +710,7 @@ model Patient {
   mergeRequestsAsTarget   PatientMergeRequest[]       @relation("MergeTarget")
   identifiers             PatientIdentifier[]
   appointments            Appointment[]
+  appointmentQueueEntries AppointmentQueueEntry[]
 
   @@unique([hospitalId, uhid])
   @@index([hospitalId, status])
@@ -1113,11 +1123,12 @@ model Appointment {
   updatedBy String?   @map("updated_by") @db.Uuid
   deletedAt DateTime? @map("deleted_at")
 
-  hospital   Hospital       @relation(fields: [hospitalId], references: [id], onDelete: Restrict)
-  branch     HospitalBranch @relation(fields: [branchId], references: [id], onDelete: Restrict)
-  department Department     @relation(fields: [departmentId], references: [id], onDelete: Restrict)
-  patient    Patient        @relation(fields: [patientId], references: [id], onDelete: Restrict)
-  doctor     Doctor         @relation(fields: [doctorId], references: [id], onDelete: Restrict)
+  hospital   Hospital               @relation(fields: [hospitalId], references: [id], onDelete: Restrict)
+  branch     HospitalBranch         @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  department Department             @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+  patient    Patient                @relation(fields: [patientId], references: [id], onDelete: Restrict)
+  doctor     Doctor                 @relation(fields: [doctorId], references: [id], onDelete: Restrict)
+  queueEntry AppointmentQueueEntry?
 
   @@unique([hospitalId, appointmentNumber])
   @@index([hospitalId, appointmentDate])
@@ -1229,4 +1240,113 @@ model AppointmentSlotLock {
   @@index([doctorId, slotStart])
   @@index([expiresAt])
   @@map("appointment_slot_locks")
+}
+
+enum QueueStatus {
+  OPEN
+  PAUSED
+  CLOSED
+}
+
+enum QueueEntryStatus {
+  WAITING
+  CALLED
+  IN_PROGRESS
+  HELD
+  SKIPPED
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+enum QueuePriority {
+  NORMAL
+  PRIORITY
+  VIP
+  EMERGENCY
+}
+
+enum QueueSource {
+  APPOINTMENT
+  WALK_IN
+  EMERGENCY
+}
+
+model AppointmentQueue {
+  id              String      @id @default(uuid()) @db.Uuid
+  hospitalId      String      @map("hospital_id") @db.Uuid
+  branchId        String      @map("branch_id") @db.Uuid
+  departmentId    String      @map("department_id") @db.Uuid
+  doctorId        String      @map("doctor_id") @db.Uuid
+  queueDate       DateTime    @map("queue_date") @db.Date
+  queueCode       String      @map("queue_code") @db.VarChar(30)
+  tokenPrefix     String      @default("A") @map("token_prefix") @db.VarChar(10)
+  nextTokenNumber Int         @default(1) @map("next_token_number")
+  currentToken    String?     @map("current_token") @db.VarChar(30)
+  status          QueueStatus @default(OPEN)
+  openedAt        DateTime?   @map("opened_at")
+  pausedAt        DateTime?   @map("paused_at")
+  closedAt        DateTime?   @map("closed_at")
+  createdAt       DateTime    @default(now()) @map("created_at")
+  createdBy       String?     @map("created_by") @db.Uuid
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+  updatedBy       String?     @map("updated_by") @db.Uuid
+
+  hospital   Hospital                @relation(fields: [hospitalId], references: [id], onDelete: Restrict)
+  branch     HospitalBranch          @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  department Department              @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+  doctor     Doctor                  @relation(fields: [doctorId], references: [id], onDelete: Restrict)
+  entries    AppointmentQueueEntry[]
+
+  @@unique([hospitalId, branchId, doctorId, queueDate])
+  @@index([hospitalId, queueDate])
+  @@index([branchId, queueDate])
+  @@index([departmentId, queueDate])
+  @@index([doctorId, queueDate])
+  @@map("appointment_queues")
+}
+
+model AppointmentQueueEntry {
+  id            String           @id @default(uuid()) @db.Uuid
+  hospitalId    String           @map("hospital_id") @db.Uuid
+  branchId      String           @map("branch_id") @db.Uuid
+  departmentId  String           @map("department_id") @db.Uuid
+  doctorId      String           @map("doctor_id") @db.Uuid
+  patientId     String           @map("patient_id") @db.Uuid
+  appointmentId String?          @unique @map("appointment_id") @db.Uuid
+  queueId       String           @map("queue_id") @db.Uuid
+  tokenNumber   Int              @map("token_number")
+  tokenCode     String           @map("token_code") @db.VarChar(30)
+  priority      QueuePriority    @default(NORMAL)
+  source        QueueSource      @default(APPOINTMENT)
+  status        QueueEntryStatus @default(WAITING)
+  checkInAt     DateTime         @default(now()) @map("check_in_at")
+  calledAt      DateTime?        @map("called_at")
+  startedAt     DateTime?        @map("started_at")
+  completedAt   DateTime?        @map("completed_at")
+  heldAt        DateTime?        @map("held_at")
+  skippedAt     DateTime?        @map("skipped_at")
+  cancelledAt   DateTime?        @map("cancelled_at")
+  notes         String?
+  createdAt     DateTime         @default(now()) @map("created_at")
+  createdBy     String?          @map("created_by") @db.Uuid
+  updatedAt     DateTime         @updatedAt @map("updated_at")
+  updatedBy     String?          @map("updated_by") @db.Uuid
+
+  hospital    Hospital         @relation(fields: [hospitalId], references: [id], onDelete: Restrict)
+  branch      HospitalBranch   @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  department  Department       @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+  doctor      Doctor           @relation(fields: [doctorId], references: [id], onDelete: Restrict)
+  patient     Patient          @relation(fields: [patientId], references: [id], onDelete: Restrict)
+  appointment Appointment?     @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+  queue       AppointmentQueue @relation(fields: [queueId], references: [id], onDelete: Cascade)
+
+  @@unique([queueId, tokenNumber])
+  @@unique([queueId, tokenCode])
+  @@index([hospitalId, checkInAt])
+  @@index([queueId, status])
+  @@index([doctorId, checkInAt])
+  @@index([patientId, checkInAt])
+  @@index([priority, status])
+  @@map("appointment_queue_entries")
 }

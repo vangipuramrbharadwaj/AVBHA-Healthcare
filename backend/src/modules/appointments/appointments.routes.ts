@@ -3,6 +3,7 @@ import { authenticate } from "../../middleware/auth.middleware";
 import { requirePermission } from "../../middleware/permission.middleware";
 import { enforceTenant } from "../../middleware/tenant.middleware";
 import { appointmentScheduleRouter } from "./appointment-schedule.routes";
+import { appointmentQueueRouter } from "./appointment-queue.routes";
 import {
   appointmentDashboardController,
   cancelAppointmentController,
@@ -17,6 +18,7 @@ import { APPOINTMENT_PERMISSIONS } from "./appointments.permissions";
 export const appointmentsRouter = Router();
 appointmentsRouter.use(authenticate, enforceTenant);
 appointmentsRouter.use(appointmentScheduleRouter);
+appointmentsRouter.use(appointmentQueueRouter);
 
 appointmentsRouter.get(
   "/dashboard",
