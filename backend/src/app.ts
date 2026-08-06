@@ -1,3 +1,4 @@
+import { radiologyRouter } from "./modules/radiology";
 import { laboratoryRouter } from "./modules/laboratory";
 import { ipdRouter } from "./modules/ipd";
 import { opdRouter } from "./modules/opd";
@@ -105,6 +106,7 @@ app.use("/api/v1/appointments", appointmentsRouter);
 app.use("/api/v1/opd", opdRouter);
 app.use("/api/v1/ipd", ipdRouter);
 app.use("/api/v1/laboratory", laboratoryRouter);
+app.use("/api/v1/radiology", radiologyRouter);
 app.use("/api/v1/patients", patientClinicalRouter);
 app.use("/api/v1/patients", patientAdvancedRouter);
 app.use("/api/v1/patients", patientMergeRouter);
