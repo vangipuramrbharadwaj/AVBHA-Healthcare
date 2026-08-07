@@ -1,4 +1,3 @@
-import { systemHealthRouter } from "./modules/system-health";
 import { requestTraceMiddleware } from "./middleware/request-trace.middleware";
 import { standardNotFoundMiddleware } from "./middleware/not-found.middleware";
 import { standardErrorMiddleware } from "./middleware/standard-error.middleware";
@@ -15,6 +14,7 @@ import helmet from "helmet";
 import pinoHttp from "pino-http";
 import { env } from "./config/env";
 import { logger } from "./config/logger";
+import { prisma } from "./database/prisma";
 import { authenticationRouter } from "./modules/authentication/authentication.routes";
 import { branchesRouter } from "./modules/branches";
 import { dashboardRouter } from "./modules/dashboard";
@@ -29,6 +29,8 @@ import {
   patientMergeRouter,
   patientsRouter,
 } from "./modules/patients";
+import { successResponse } from "./shared/http/api-response";
+
 export const app = express();
 
 app.disable("x-powered-by");
@@ -72,10 +74,27 @@ app.use(
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true, limit: "1mb" }));
 
+app.get("/api/v1/health", async (req, res, next) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
 
-
-// PHASE 11.4 SYSTEM HEALTH ROUTER
-app.use("/api/v1", systemHealthRouter);
+    res.status(200).json(
+      successResponse(
+        {
+          application: "AVBHA Healthcare HMS",
+          environment: env.NODE_ENV,
+          database: "connected",
+          uptimeSeconds: Math.floor(process.uptime()),
+          version: "1.0.0",
+        },
+        "AVBHA Healthcare API is healthy",
+        req.requestId,
+      ),
+    );
+  } catch (error) {
+    next(error);
+  }
+});
 
 app.use("/api/v1/auth", authenticationRouter);
 app.use("/api/v1/dashboard", dashboardRouter);
