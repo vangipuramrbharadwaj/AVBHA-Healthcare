@@ -1,4 +1,3 @@
-import { nextOtBookingNumber, nextOtSpecimenNumber } from "../../shared/sequences/document-number.presets";
 import {
   OtBookingPriority,
   OtBookingStatus,
@@ -27,20 +26,34 @@ function endOfDay(date: Date): Date {
   return value;
 }
 
-async function nextBookingNumber(
-  hospitalId: string,
-  date: Date,
-): Promise<string> {
-  // PHASE 11.2B: nextBookingNumber
-  return nextOtBookingNumber(hospitalId, date);
+async function nextBookingNumber(hospitalId: string, date: Date) {
+  const prefix = `OT-${date.getFullYear()}${String(
+    date.getMonth() + 1,
+  ).padStart(2, "0")}${String(date.getDate()).padStart(2, "0")}`;
+
+  const count = await prisma.otBooking.count({
+    where: {
+      hospitalId,
+      bookingNumber: { startsWith: prefix },
+    },
+  });
+
+  return `${prefix}-${String(count + 1).padStart(4, "0")}`;
 }
 
-async function nextSpecimenNumber(
-  hospitalId: string,
-  date: Date,
-): Promise<string> {
-  // PHASE 11.2B: nextSpecimenNumber
-  return nextOtSpecimenNumber(hospitalId, date);
+async function nextSpecimenNumber(hospitalId: string, date: Date) {
+  const prefix = `OTS-${date.getFullYear()}${String(
+    date.getMonth() + 1,
+  ).padStart(2, "0")}${String(date.getDate()).padStart(2, "0")}`;
+
+  const count = await prisma.otSpecimen.count({
+    where: {
+      hospitalId,
+      specimenNumber: { startsWith: prefix },
+    },
+  });
+
+  return `${prefix}-${String(count + 1).padStart(4, "0")}`;
 }
 
 async function requireBooking(hospitalId: string, id: string) {

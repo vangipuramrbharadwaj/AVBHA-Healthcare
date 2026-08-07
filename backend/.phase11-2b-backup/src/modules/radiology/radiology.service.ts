@@ -1,4 +1,3 @@
-import { nextRadiologyOrderNumber } from "../../shared/sequences/document-number.presets";
 import {
   RadiologyModality,
   RadiologyOrderPriority,
@@ -28,12 +27,19 @@ function endOfDay(date: Date): Date {
   return value;
 }
 
-async function nextOrderNumber(
-  hospitalId: string,
-  date: Date,
-): Promise<string> {
-  // PHASE 11.2B: nextOrderNumber
-  return nextRadiologyOrderNumber(hospitalId, date);
+async function nextOrderNumber(hospitalId: string, date: Date) {
+  const prefix = `RAD-${date.getFullYear()}${String(
+    date.getMonth() + 1,
+  ).padStart(2, "0")}${String(date.getDate()).padStart(2, "0")}`;
+
+  const count = await prisma.radiologyOrder.count({
+    where: {
+      hospitalId,
+      orderNumber: { startsWith: prefix },
+    },
+  });
+
+  return `${prefix}-${String(count + 1).padStart(4, "0")}`;
 }
 
 async function requireOrder(hospitalId: string, id: string) {

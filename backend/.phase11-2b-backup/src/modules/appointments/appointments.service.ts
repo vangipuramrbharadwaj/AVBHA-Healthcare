@@ -1,4 +1,3 @@
-import { nextAppointmentNumber } from "../../shared/sequences/document-number.presets";
 import {
   AppointmentPriority,
   AppointmentStatus,
@@ -126,8 +125,19 @@ async function nextNumber(
   hospitalId: string,
   date: Date,
 ): Promise<string> {
-  // PHASE 11.2B: nextNumber
-  return nextAppointmentNumber(hospitalId, date);
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(date.getUTCDate()).padStart(2, "0");
+  const prefix = `APT-${year}${month}${day}`;
+
+  const count = await prisma.appointment.count({
+    where: {
+      hospitalId,
+      appointmentNumber: { startsWith: prefix },
+    },
+  });
+
+  return `${prefix}-${String(count + 1).padStart(4, "0")}`;
 }
 
 const appointmentInclude = {

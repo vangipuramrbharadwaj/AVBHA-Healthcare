@@ -1,4 +1,3 @@
-import { nextPharmacyDispenseNumber, nextPharmacyGrnNumber, nextPharmacyPurchaseNumber, nextPharmacySaleNumber } from "../../shared/sequences/document-number.presets";
 import {
   PharmacyDispenseStatus,
   PharmacyMedicineStatus,
@@ -34,17 +33,30 @@ async function nextDocumentNumber(
   prefix: string,
   type: "sale" | "dispense" | "purchase" | "receipt",
 ): Promise<string> {
-  // PHASE 11.2B: pharmacy document allocator
-  switch (type) {
-    case "sale":
-      return nextPharmacySaleNumber(hospitalId);
-    case "dispense":
-      return nextPharmacyDispenseNumber(hospitalId);
-    case "purchase":
-      return nextPharmacyPurchaseNumber(hospitalId);
-    case "receipt":
-      return nextPharmacyGrnNumber(hospitalId);
+  const date = new Date();
+  const datePart = `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, "0")}${String(date.getDate()).padStart(2, "0")}`;
+  const startsWith = `${prefix}-${datePart}`;
+
+  let count = 0;
+  if (type === "sale") {
+    count = await prisma.pharmacySale.count({
+      where: { hospitalId, saleNumber: { startsWith } },
+    });
+  } else if (type === "dispense") {
+    count = await prisma.pharmacyDispense.count({
+      where: { hospitalId, dispenseNumber: { startsWith } },
+    });
+  } else if (type === "purchase") {
+    count = await prisma.pharmacyPurchaseOrder.count({
+      where: { hospitalId, purchaseNumber: { startsWith } },
+    });
+  } else {
+    count = await prisma.pharmacyGoodsReceipt.count({
+      where: { hospitalId, receiptNumber: { startsWith } },
+    });
   }
+
+  return `${startsWith}-${String(count + 1).padStart(4, "0")}`;
 }
 
 export async function createSupplier(

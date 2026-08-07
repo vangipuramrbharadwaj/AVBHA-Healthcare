@@ -1,4 +1,3 @@
-import { nextPatientUhid } from "../../shared/sequences/document-number.presets";
 import { Prisma } from "@prisma/client";
 import { prisma } from "../../database/prisma";
 import type {
@@ -184,8 +183,42 @@ export async function branchExists(
 export async function generateUhid(
   hospitalId: string,
 ): Promise<string> {
-  // PHASE 11.2B: centralized UHID allocator
-  return nextPatientUhid(hospitalId);
+  const rows = await prisma.$queryRaw<Array<{ hospital_code: string }>>(Prisma.sql`
+    SELECT hospital_code
+    FROM hospitals
+    WHERE id = ${hospitalId}::uuid
+    LIMIT 1
+  `);
+
+  const prefix = rows[0]?.hospital_code?.replace(/[^A-Za-z0-9]/g, "") ?? "AVBHA";
+  const year = new Date().getFullYear();
+
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const countRows = await prisma.$queryRaw<Array<{ total: bigint }>>(Prisma.sql`
+      SELECT COUNT(*)::bigint AS total
+      FROM patients
+      WHERE hospital_id = ${hospitalId}::uuid
+        AND EXTRACT(YEAR FROM created_at) = ${year}
+    `);
+
+    const sequence = Number(countRows[0]?.total ?? 0) + 1 + attempt;
+    const uhid = `${prefix}-${year}-${String(sequence).padStart(6, "0")}`;
+
+    const existsRows = await prisma.$queryRaw<Array<{ exists: boolean }>>(Prisma.sql`
+      SELECT EXISTS(
+        SELECT 1
+        FROM patients
+        WHERE hospital_id = ${hospitalId}::uuid
+          AND uhid = ${uhid}
+      ) AS exists
+    `);
+
+    if (!existsRows[0]?.exists) {
+      return uhid;
+    }
+  }
+
+  throw new Error("Unable to generate a unique UHID");
 }
 
 export async function findPotentialDuplicates(

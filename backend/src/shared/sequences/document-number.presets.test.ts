@@ -1,0 +1,22 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import { DOCUMENT_TYPES } from "./document-sequence.types";
+
+test("all Phase 11.2B document types are defined", () => {
+  assert.equal(DOCUMENT_TYPES.PATIENT_UHID, "PATIENT_UHID");
+  assert.equal(DOCUMENT_TYPES.APPOINTMENT, "APPOINTMENT");
+  assert.equal(DOCUMENT_TYPES.OPD_VISIT, "OPD_VISIT");
+  assert.equal(DOCUMENT_TYPES.IPD_ADMISSION, "IPD_ADMISSION");
+  assert.equal(DOCUMENT_TYPES.LAB_ORDER, "LAB_ORDER");
+  assert.equal(DOCUMENT_TYPES.RADIOLOGY_ORDER, "RADIOLOGY_ORDER");
+  assert.equal(DOCUMENT_TYPES.PHARMACY_PURCHASE, "PHARMACY_PURCHASE");
+  assert.equal(DOCUMENT_TYPES.PHARMACY_GRN, "PHARMACY_GRN");
+  assert.equal(DOCUMENT_TYPES.PHARMACY_SALE, "PHARMACY_SALE");
+  assert.equal(DOCUMENT_TYPES.PHARMACY_DISPENSE, "PHARMACY_DISPENSE");
+  assert.equal(DOCUMENT_TYPES.BILLING_INVOICE, "BILLING_INVOICE");
+  assert.equal(DOCUMENT_TYPES.BILLING_RECEIPT, "BILLING_RECEIPT");
+  assert.equal(DOCUMENT_TYPES.BILLING_REFUND, "BILLING_REFUND");
+  assert.equal(DOCUMENT_TYPES.BILLING_ADVANCE, "BILLING_ADVANCE");
+  assert.equal(DOCUMENT_TYPES.OT_BOOKING, "OT_BOOKING");
+  assert.equal(DOCUMENT_TYPES.OT_SPECIMEN, "OT_SPECIMEN");
+});

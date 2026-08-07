@@ -3341,3 +3341,22 @@ model OtComplication {
   @@index([severity])
   @@map("ot_complications")
 }
+
+model DocumentSequence {
+  id           String   @id @default(uuid()) @db.Uuid
+  hospitalId   String   @map("hospital_id") @db.Uuid
+  branchId     String?  @map("branch_id") @db.Uuid
+  scopeKey     String   @map("scope_key") @db.VarChar(64)
+  documentType String   @map("document_type") @db.VarChar(60)
+  periodKey    String   @map("period_key") @db.VarChar(20)
+  prefix       String   @db.VarChar(20)
+  currentValue BigInt   @default(0) @map("current_value")
+  padding      Int      @default(6)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@unique([hospitalId, scopeKey, documentType, periodKey])
+  @@index([hospitalId, documentType])
+  @@index([branchId])
+  @@map("document_sequences")
+}

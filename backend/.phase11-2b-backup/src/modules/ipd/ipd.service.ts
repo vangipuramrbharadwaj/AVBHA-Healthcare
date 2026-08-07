@@ -1,4 +1,3 @@
-import { nextIpdAdmissionNumber } from "../../shared/sequences/document-number.presets";
 import {
   IpdAdmissionStatus,
   IpdAdmissionType,
@@ -35,8 +34,18 @@ async function nextAdmissionNumber(
   hospitalId: string,
   date: Date,
 ): Promise<string> {
-  // PHASE 11.2B: nextAdmissionNumber
-  return nextIpdAdmissionNumber(hospitalId, date);
+  const prefix = `IPD-${date.getFullYear()}${String(
+    date.getMonth() + 1,
+  ).padStart(2, "0")}${String(date.getDate()).padStart(2, "0")}`;
+
+  const count = await prisma.ipdAdmission.count({
+    where: {
+      hospitalId,
+      admissionNumber: { startsWith: prefix },
+    },
+  });
+
+  return `${prefix}-${String(count + 1).padStart(4, "0")}`;
 }
 
 export async function createWard(

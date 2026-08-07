@@ -1,4 +1,3 @@
-import { nextBillingAdvanceNumber, nextBillingInvoiceNumber, nextBillingReceiptNumber, nextBillingRefundNumber } from "../../shared/sequences/document-number.presets";
 import {
   BillingInvoiceStatus,
   BillingLedgerEntryType,
@@ -27,17 +26,33 @@ async function nextNumber(
   prefix: string,
   type: "invoice" | "payment" | "refund" | "advance",
 ): Promise<string> {
-  // PHASE 11.2B: billing document allocator
-  switch (type) {
-    case "invoice":
-      return nextBillingInvoiceNumber(hospitalId);
-    case "payment":
-      return nextBillingReceiptNumber(hospitalId);
-    case "refund":
-      return nextBillingRefundNumber(hospitalId);
-    case "advance":
-      return nextBillingAdvanceNumber(hospitalId);
+  const date = new Date();
+  const datePart = `${date.getFullYear()}${String(
+    date.getMonth() + 1,
+  ).padStart(2, "0")}${String(date.getDate()).padStart(2, "0")}`;
+  const startsWith = `${prefix}-${datePart}`;
+
+  let count = 0;
+
+  if (type === "invoice") {
+    count = await prisma.billingInvoice.count({
+      where: { hospitalId, invoiceNumber: { startsWith } },
+    });
+  } else if (type === "payment") {
+    count = await prisma.billingPayment.count({
+      where: { hospitalId, receiptNumber: { startsWith } },
+    });
+  } else if (type === "refund") {
+    count = await prisma.billingRefund.count({
+      where: { hospitalId, refundNumber: { startsWith } },
+    });
+  } else {
+    count = await prisma.billingAdvancePayment.count({
+      where: { hospitalId, advanceNumber: { startsWith } },
+    });
   }
+
+  return `${startsWith}-${String(count + 1).padStart(4, "0")}`;
 }
 
 async function currentPatientBalance(

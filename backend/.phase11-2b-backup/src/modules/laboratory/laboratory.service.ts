@@ -1,4 +1,3 @@
-import { nextLabOrderNumber } from "../../shared/sequences/document-number.presets";
 import {
   LabOrderPriority,
   LabOrderStatus,
@@ -16,12 +15,19 @@ function clean<T extends Record<string, unknown>>(value: T): T {
   ) as T;
 }
 
-async function nextOrderNumber(
-  hospitalId: string,
-  date: Date,
-): Promise<string> {
-  // PHASE 11.2B: nextOrderNumber
-  return nextLabOrderNumber(hospitalId, date);
+async function nextOrderNumber(hospitalId: string, date: Date) {
+  const prefix = `LAB-${date.getFullYear()}${String(
+    date.getMonth() + 1,
+  ).padStart(2, "0")}${String(date.getDate()).padStart(2, "0")}`;
+
+  const count = await prisma.labOrder.count({
+    where: {
+      hospitalId,
+      orderNumber: { startsWith: prefix },
+    },
+  });
+
+  return `${prefix}-${String(count + 1).padStart(4, "0")}`;
 }
 
 export async function createTest(

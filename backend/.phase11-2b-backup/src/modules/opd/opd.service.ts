@@ -1,4 +1,3 @@
-import { nextOpdVisitNumber } from "../../shared/sequences/document-number.presets";
 import {
   AppointmentStatus,
   ConsultationStatus,
@@ -35,8 +34,18 @@ async function nextVisitNumber(
   hospitalId: string,
   date: Date,
 ): Promise<string> {
-  // PHASE 11.2B: nextVisitNumber
-  return nextOpdVisitNumber(hospitalId, date);
+  const prefix = `OPD-${date.getFullYear()}${String(
+    date.getMonth() + 1,
+  ).padStart(2, "0")}${String(date.getDate()).padStart(2, "0")}`;
+
+  const count = await prisma.opdVisit.count({
+    where: {
+      hospitalId,
+      visitNumber: { startsWith: prefix },
+    },
+  });
+
+  return `${prefix}-${String(count + 1).padStart(4, "0")}`;
 }
 
 export async function createVisit(
