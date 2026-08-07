@@ -9,10 +9,10 @@ export interface ApiSuccessResponse<T> {
 export interface ApiErrorResponse {
   success: false;
   message: string;
-  errorCode: string;
-  details?: unknown;
+  code: string;
   requestId?: string;
   timestamp: string;
+  details?: unknown;
 }
 
 export function successResponse<T>(
@@ -24,23 +24,23 @@ export function successResponse<T>(
     success: true,
     message,
     data,
+    ...(requestId !== undefined ? { requestId } : {}),
     timestamp: new Date().toISOString(),
-    ...(requestId ? { requestId } : {}),
   };
 }
 
 export function errorResponse(
   message: string,
-  errorCode: string,
+  code = "INTERNAL_SERVER_ERROR",
   requestId?: string,
   details?: unknown,
 ): ApiErrorResponse {
   return {
     success: false,
     message,
-    errorCode,
+    code,
+    ...(requestId !== undefined ? { requestId } : {}),
     timestamp: new Date().toISOString(),
-    ...(requestId ? { requestId } : {}),
     ...(details !== undefined ? { details } : {}),
   };
 }

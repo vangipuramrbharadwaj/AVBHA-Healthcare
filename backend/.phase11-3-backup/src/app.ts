@@ -1,6 +1,3 @@
-import { requestTraceMiddleware } from "./middleware/request-trace.middleware";
-import { standardNotFoundMiddleware } from "./middleware/not-found.middleware";
-import { standardErrorMiddleware } from "./middleware/standard-error.middleware";
 import { operationTheatreRouter } from "./modules/operation-theatre";
 import { billingRouter } from "./modules/billing";
 import { pharmacyRouter } from "./modules/pharmacy";
@@ -15,6 +12,11 @@ import pinoHttp from "pino-http";
 import { env } from "./config/env";
 import { logger } from "./config/logger";
 import { prisma } from "./database/prisma";
+import {
+  errorMiddleware,
+  notFoundMiddleware,
+} from "./middleware/error.middleware";
+import { requestIdMiddleware } from "./middleware/request-id.middleware";
 import { authenticationRouter } from "./modules/authentication/authentication.routes";
 import { branchesRouter } from "./modules/branches";
 import { dashboardRouter } from "./modules/dashboard";
@@ -36,8 +38,7 @@ export const app = express();
 app.disable("x-powered-by");
 app.set("trust proxy", 1);
 
-// PHASE 11.3 CURRENT APP INTEGRATION
-app.use(requestTraceMiddleware);
+app.use(requestIdMiddleware);
 
 app.use(
   pinoHttp({
@@ -116,6 +117,5 @@ app.use("/api/v1/patients", patientClinicalRouter);
 app.use("/api/v1/patients", patientAdvancedRouter);
 app.use("/api/v1/patients", patientMergeRouter);
 
-// PHASE 11.3 standardized terminal middleware
-app.use(standardNotFoundMiddleware);
-app.use(standardErrorMiddleware);
+app.use(notFoundMiddleware);
+app.use(errorMiddleware);
