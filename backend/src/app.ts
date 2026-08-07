@@ -1,3 +1,4 @@
+import { reportsRouter } from "./modules/reports";
 import { communicationsRouter } from "./modules/communications";
 import { inventoryRouter } from "./modules/inventory";
 import { systemHealthRouter } from "./modules/system-health";
@@ -81,6 +82,7 @@ app.use("/api/v1", systemHealthRouter);
 
 app.use("/api/v1/auth", authenticationRouter);
 app.use("/api/v1/dashboard", dashboardRouter);
+app.use("/api/v1/reports", reportsRouter);
 app.use("/api/v1/hospitals", hospitalsRouter);
 app.use("/api/v1/branches", branchesRouter);
 app.use("/api/v1/departments", departmentsRouter);
