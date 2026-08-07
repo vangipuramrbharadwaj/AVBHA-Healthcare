@@ -11,7 +11,9 @@
     "seed": "tsx --tsconfig prisma/tsconfig.json prisma/seed.ts",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "prisma:studio": "prisma studio"
+    "prisma:studio": "prisma studio",
+    "test:integration": "node --import tsx --test src/integration/*.integration.test.ts",
+    "test:integration:core": "node --import tsx --test src/integration/health.integration.test.ts src/integration/request-trace.integration.test.ts src/integration/error-handling.integration.test.ts src/integration/full-regression.integration.test.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.0.0",
