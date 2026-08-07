@@ -21,7 +21,11 @@ export type AppointmentPriority = "NORMAL" | "URGENT" | "EMERGENCY";
 export interface CreateAppointmentInput {
   branchId: string;
   departmentId: string;
-  patientId: string;
+  patientId?: string;
+  guestName?: string;
+  guestMobile?: string;
+  guestGender?: string;
+  guestDateOfBirth?: string;
   doctorId: string;
   appointmentDate: string;
   startTime: string;
@@ -45,6 +49,26 @@ export interface RescheduleAppointmentInput {
   endTime: string;
   reason?: string | null;
 }
+
+export type UpdateAppointmentInput = Partial<
+  Omit<
+    CreateAppointmentInput,
+    "status" | "guestGender" | "guestDateOfBirth"
+  >
+> & {
+  patientId?: string | null;
+  guestGender?: string | null;
+  guestDateOfBirth?: string | null;
+  status?:
+    | "BOOKED"
+    | "CONFIRMED"
+    | "CHECKED_IN"
+    | "IN_PROGRESS"
+    | "COMPLETED"
+    | "CANCELLED"
+    | "NO_SHOW"
+    | "RESCHEDULED";
+};
 
 function qs(
   input: Record<string, string | number | undefined | null>,
@@ -102,7 +126,17 @@ export function getAppointmentDashboard(date: string) {
 export function createAppointment(input: CreateAppointmentInput) {
   return apiRequest<AppointmentSummary>("/appointments", {
     method: "POST",
-    body: JSON.stringify(input),
+    body: input,
+  });
+}
+
+export function updateAppointment(
+  id: string,
+  input: UpdateAppointmentInput,
+) {
+  return apiRequest<AppointmentSummary>(`/appointments/${id}`, {
+    method: "PATCH",
+    body: input,
   });
 }
 
@@ -118,7 +152,7 @@ export function updateAppointmentStatus(
 ) {
   return apiRequest<AppointmentSummary>(`/appointments/${id}`, {
     method: "PATCH",
-    body: JSON.stringify({ status }),
+    body: { status },
   });
 }
 
@@ -130,7 +164,7 @@ export function cancelAppointment(
     `/appointments/${id}/cancel`,
     {
       method: "PATCH",
-      body: JSON.stringify({ cancellationReason }),
+      body: { cancellationReason },
     },
   );
 }
@@ -143,7 +177,18 @@ export function rescheduleAppointment(
     `/appointments/${id}/reschedule`,
     {
       method: "POST",
-      body: JSON.stringify(input),
+      body: input,
     },
   );
+}
+
+
+export function linkAppointmentPatient(
+  appointmentId: string,
+  patientId: string,
+) {
+  return apiRequest<AppointmentSummary>(`/appointments/${appointmentId}`, {
+    method: "PATCH",
+    body: { patientId },
+  });
 }

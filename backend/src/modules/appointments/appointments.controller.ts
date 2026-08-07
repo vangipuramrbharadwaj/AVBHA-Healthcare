@@ -14,8 +14,22 @@ export async function createAppointmentController(
     const createInput = {
       branchId: input.branchId,
       departmentId: input.departmentId,
-      patientId: input.patientId,
       doctorId: input.doctorId,
+      ...(input.patientId !== undefined && input.patientId !== null
+        ? { patientId: input.patientId }
+        : {}),
+      ...(input.guestName !== undefined
+        ? { guestName: input.guestName }
+        : {}),
+      ...(input.guestMobile !== undefined
+        ? { guestMobile: input.guestMobile }
+        : {}),
+      ...(input.guestGender !== undefined
+        ? { guestGender: input.guestGender }
+        : {}),
+      ...(input.guestDateOfBirth !== undefined
+        ? { guestDateOfBirth: input.guestDateOfBirth }
+        : {}),
       appointmentDate: input.appointmentDate,
       startTime: input.startTime,
       endTime: input.endTime,

@@ -16,7 +16,11 @@ export const appointmentIdParamsSchema = z.object({
 export const createAppointmentSchema = z.object({
   branchId: z.string().uuid(),
   departmentId: z.string().uuid(),
-  patientId: z.string().uuid(),
+  patientId: z.string().uuid().optional().nullable(),
+  guestName: optionalText(150),
+  guestMobile: optionalText(20),
+  guestGender: optionalText(20),
+  guestDateOfBirth: z.coerce.date().optional().nullable(),
   doctorId: z.string().uuid(),
   appointmentDate: z.coerce.date(),
   startTime: z.coerce.date(),
@@ -34,6 +38,14 @@ export const createAppointmentSchema = z.object({
   referredBy: optionalText(150),
   confirmationMode: optionalText(30),
 }).superRefine((value, context) => {
+  if (!value.patientId && (!value.guestName || !value.guestMobile)) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["patientId"],
+      message: "Select an existing patient or enter visitor name and mobile",
+    });
+  }
+
   if (value.endTime <= value.startTime) {
     context.addIssue({
       code: z.ZodIssueCode.custom,
@@ -46,7 +58,11 @@ export const createAppointmentSchema = z.object({
 export const updateAppointmentSchema = z.object({
   branchId: z.string().uuid().optional(),
   departmentId: z.string().uuid().optional(),
-  patientId: z.string().uuid().optional(),
+  patientId: z.string().uuid().optional().nullable(),
+  guestName: optionalText(150),
+  guestMobile: optionalText(20),
+  guestGender: optionalText(20),
+  guestDateOfBirth: z.coerce.date().optional().nullable(),
   doctorId: z.string().uuid().optional(),
   appointmentDate: z.coerce.date().optional(),
   startTime: z.coerce.date().optional(),

@@ -1127,8 +1127,8 @@ model Appointment {
   hospitalId   String @map("hospital_id") @db.Uuid
   branchId     String @map("branch_id") @db.Uuid
   departmentId String @map("department_id") @db.Uuid
-  patientId    String @map("patient_id") @db.Uuid
-  doctorId     String @map("doctor_id") @db.Uuid
+  patientId    String? @map("patient_id") @db.Uuid
+  doctorId     String  @map("doctor_id") @db.Uuid
 
   appointmentNumber String               @map("appointment_number") @db.VarChar(40)
   appointmentDate   DateTime             @map("appointment_date") @db.Date
@@ -1148,6 +1148,11 @@ model Appointment {
   referredBy       String? @map("referred_by") @db.VarChar(150)
   confirmationMode String? @map("confirmation_mode") @db.VarChar(30)
 
+  guestName     String? @map("guest_name") @db.VarChar(150)
+  guestMobile   String? @map("guest_mobile") @db.VarChar(20)
+  guestGender   String? @map("guest_gender") @db.VarChar(20)
+  guestDateOfBirth DateTime? @map("guest_date_of_birth") @db.Date
+
   cancelledAt        DateTime? @map("cancelled_at")
   cancelledBy        String?   @map("cancelled_by") @db.Uuid
   cancellationReason String?   @map("cancellation_reason")
@@ -1164,7 +1169,7 @@ model Appointment {
   hospital   Hospital               @relation(fields: [hospitalId], references: [id], onDelete: Restrict)
   branch     HospitalBranch         @relation(fields: [branchId], references: [id], onDelete: Restrict)
   department Department             @relation(fields: [departmentId], references: [id], onDelete: Restrict)
-  patient    Patient                @relation(fields: [patientId], references: [id], onDelete: Restrict)
+  patient    Patient?               @relation(fields: [patientId], references: [id], onDelete: Restrict)
   doctor     Doctor                 @relation(fields: [doctorId], references: [id], onDelete: Restrict)
   queueEntry AppointmentQueueEntry?
   opdVisit   OpdVisit?
@@ -1175,6 +1180,7 @@ model Appointment {
   @@index([departmentId, appointmentDate])
   @@index([doctorId, startTime])
   @@index([patientId, appointmentDate])
+  @@index([guestMobile])
   @@index([status])
   @@map("appointments")
 }

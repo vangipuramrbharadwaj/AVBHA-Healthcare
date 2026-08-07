@@ -18,11 +18,11 @@ async function requireReferences(
   input: {
     branchId: string;
     departmentId: string;
-    patientId: string;
+    patientId?: string | null;
     doctorId: string;
   },
 ): Promise<void> {
-  const [branch, department, patient, doctor] = await Promise.all([
+  const [branch, department, doctor, patient] = await Promise.all([
     prisma.hospitalBranch.count({
       where: {
         id: input.branchId,
@@ -37,13 +37,6 @@ async function requireReferences(
         deletedAt: null,
       },
     }),
-    prisma.patient.count({
-      where: {
-        id: input.patientId,
-        hospitalId,
-        deletedAt: null,
-      },
-    }),
     prisma.doctor.count({
       where: {
         id: input.doctorId,
@@ -51,6 +44,15 @@ async function requireReferences(
         deletedAt: null,
       },
     }),
+    input.patientId
+      ? prisma.patient.count({
+          where: {
+            id: input.patientId,
+            hospitalId,
+            deletedAt: null,
+          },
+        })
+      : Promise.resolve(1),
   ]);
 
   if (!branch) {
@@ -69,19 +71,19 @@ async function requireReferences(
     );
   }
 
-  if (!patient) {
-    throw new AppError(
-      "Patient was not found",
-      404,
-      "PATIENT_NOT_FOUND",
-    );
-  }
-
   if (!doctor) {
     throw new AppError(
       "Doctor was not found",
       404,
       "DOCTOR_NOT_FOUND",
+    );
+  }
+
+  if (!patient) {
+    throw new AppError(
+      "Patient was not found",
+      404,
+      "PATIENT_NOT_FOUND",
     );
   }
 }
@@ -179,7 +181,11 @@ export async function createAppointment(
   input: {
     branchId: string;
     departmentId: string;
-    patientId: string;
+    patientId?: string | null;
+    guestName?: string | null;
+    guestMobile?: string | null;
+    guestGender?: string | null;
+    guestDateOfBirth?: Date | null;
     doctorId: string;
     appointmentDate: Date;
     startTime: Date;
@@ -216,7 +222,6 @@ export async function createAppointment(
     hospitalId,
     branchId: input.branchId,
     departmentId: input.departmentId,
-    patientId: input.patientId,
     doctorId: input.doctorId,
     appointmentNumber,
     appointmentDate: input.appointmentDate,
@@ -230,6 +235,22 @@ export async function createAppointment(
     createdBy: userId,
     updatedBy: userId,
   };
+
+  if (input.patientId) {
+    data.patientId = input.patientId;
+  }
+  if (input.guestName !== undefined) {
+    data.guestName = input.guestName;
+  }
+  if (input.guestMobile !== undefined) {
+    data.guestMobile = input.guestMobile;
+  }
+  if (input.guestGender !== undefined) {
+    data.guestGender = input.guestGender;
+  }
+  if (input.guestDateOfBirth !== undefined) {
+    data.guestDateOfBirth = input.guestDateOfBirth;
+  }
 
   if (input.chiefComplaint !== undefined) {
     data.chiefComplaint = input.chiefComplaint;
@@ -271,18 +292,20 @@ export async function createAppointment(
       },
     });
 
-    await transaction.patientTimelineEvent.create({
-      data: {
-        hospitalId,
-        patientId: record.patientId,
-        eventType: "APPOINTMENT_BOOKED",
-        eventTitle: `Appointment ${record.appointmentNumber} booked`,
-        sourceModule: "appointments",
-        sourceEntityId: record.id,
-        eventAt: record.startTime,
-        createdBy: userId,
-      },
-    });
+    if (record.patientId) {
+      await transaction.patientTimelineEvent.create({
+        data: {
+          hospitalId,
+          patientId: record.patientId,
+          eventType: "APPOINTMENT_BOOKED",
+          eventTitle: `Appointment ${record.appointmentNumber} booked`,
+          sourceModule: "appointments",
+          sourceEntityId: record.id,
+          eventAt: record.startTime,
+          createdBy: userId,
+        },
+      });
+    }
 
     return record;
   });
@@ -371,6 +394,18 @@ export async function listAppointments(
                 },
               },
             },
+            {
+              guestName: {
+                contains: query.search,
+                mode: "insensitive",
+              },
+            },
+            {
+              guestMobile: {
+                contains: query.search,
+                mode: "insensitive",
+              },
+            },
           ],
         }
       : {}),
@@ -390,8 +425,55 @@ export async function listAppointments(
     prisma.appointment.count({ where }),
   ]);
 
+  const rescheduledSourceIds = items
+    .filter((item) => item.status === AppointmentStatus.RESCHEDULED)
+    .map((item) => item.id);
+
+  const rescheduledAppointments =
+    rescheduledSourceIds.length > 0
+      ? await prisma.appointment.findMany({
+          where: {
+            hospitalId,
+            deletedAt: null,
+            rescheduledFromId: { in: rescheduledSourceIds },
+          },
+          select: {
+            id: true,
+            rescheduledFromId: true,
+            appointmentNumber: true,
+            appointmentDate: true,
+            startTime: true,
+            endTime: true,
+            status: true,
+          },
+          orderBy: { createdAt: "desc" },
+        })
+      : [];
+
+  const rescheduledBySource = new Map<
+    string,
+    (typeof rescheduledAppointments)[number]
+  >();
+
+  for (const appointment of rescheduledAppointments) {
+    if (
+      appointment.rescheduledFromId &&
+      !rescheduledBySource.has(appointment.rescheduledFromId)
+    ) {
+      rescheduledBySource.set(
+        appointment.rescheduledFromId,
+        appointment,
+      );
+    }
+  }
+
+  const enrichedItems = items.map((item) => ({
+    ...item,
+    rescheduledTo: rescheduledBySource.get(item.id) ?? null,
+  }));
+
   return {
-    items,
+    items: enrichedItems,
     pagination: {
       page: query.page,
       pageSize: query.pageSize,
@@ -456,6 +538,23 @@ export async function updateAppointment(
     id,
   );
 
+  if (typeof input.patientId === "string") {
+    const patient = await prisma.patient.count({
+      where: {
+        id: input.patientId,
+        hospitalId,
+        deletedAt: null,
+      },
+    });
+    if (!patient) {
+      throw new AppError(
+        "Patient was not found",
+        404,
+        "PATIENT_NOT_FOUND",
+      );
+    }
+  }
+
   const data: Prisma.AppointmentUncheckedUpdateInput = {
     updatedBy: userId,
   };
@@ -466,10 +565,33 @@ export async function updateAppointment(
     }
   }
 
-  return prisma.appointment.update({
-    where: { id },
-    data,
-    include: appointmentInclude,
+  return prisma.$transaction(async (transaction) => {
+    const record = await transaction.appointment.update({
+      where: { id },
+      data,
+      include: appointmentInclude,
+    });
+
+    if (
+      !existing.patientId &&
+      typeof input.patientId === "string" &&
+      record.patientId
+    ) {
+      await transaction.patientTimelineEvent.create({
+        data: {
+          hospitalId,
+          patientId: record.patientId,
+          eventType: "APPOINTMENT_LINKED",
+          eventTitle: `Appointment ${record.appointmentNumber} linked to patient`,
+          sourceModule: "appointments",
+          sourceEntityId: record.id,
+          eventAt: record.startTime,
+          createdBy: userId,
+        },
+      });
+    }
+
+    return record;
   });
 }
 
@@ -555,7 +677,6 @@ export async function rescheduleAppointment(
       hospitalId,
       branchId: existing.branchId,
       departmentId: existing.departmentId,
-      patientId: existing.patientId,
       doctorId: existing.doctorId,
       appointmentNumber,
       appointmentDate: input.appointmentDate,
@@ -573,6 +694,22 @@ export async function rescheduleAppointment(
       createdBy: userId,
       updatedBy: userId,
     };
+
+    if (existing.patientId !== null) {
+      data.patientId = existing.patientId;
+    }
+    if (existing.guestName !== null) {
+      data.guestName = existing.guestName;
+    }
+    if (existing.guestMobile !== null) {
+      data.guestMobile = existing.guestMobile;
+    }
+    if (existing.guestGender !== null) {
+      data.guestGender = existing.guestGender;
+    }
+    if (existing.guestDateOfBirth !== null) {
+      data.guestDateOfBirth = existing.guestDateOfBirth;
+    }
 
     if (existing.chiefComplaint !== null) {
       data.chiefComplaint = existing.chiefComplaint;
