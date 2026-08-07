@@ -13,7 +13,12 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
     "test:integration": "node --import tsx --test src/integration/*.integration.test.ts",
-    "test:integration:core": "node --import tsx --test src/integration/health.integration.test.ts src/integration/request-trace.integration.test.ts src/integration/error-handling.integration.test.ts src/integration/full-regression.integration.test.ts"
+    "test:integration:core": "node --import tsx --test src/integration/health.integration.test.ts src/integration/request-trace.integration.test.ts src/integration/error-handling.integration.test.ts src/integration/full-regression.integration.test.ts",
+    "test:unit:all": "node scripts/run-all-tests.mjs",
+    "audit:release": "node scripts/audit-release-gate.mjs",
+    "verify:static": "prisma validate && prisma generate && tsc --noEmit && node scripts/audit-release-gate.mjs",
+    "verify": "npm run verify:static && npm run test:unit:all",
+    "release:gate": "bash ./release-gate.sh"
   },
   "dependencies": {
     "@prisma/client": "^6.0.0",
