@@ -13,6 +13,8 @@ import { PatientEditPage } from "../pages/PatientEditPage";
 import { ProtectedRoute } from "./ProtectedRoute";
 import { PermissionRoute } from "./PermissionRoute";
 import ReceptionOpdPage from "../pages/ReceptionOpdPage";
+import AppointmentsPage from "../pages/AppointmentsPage";
+import DoctorsPage from "../pages/DoctorsPage";
 
 const modulePage=(permission:string,title:string,description:string)=><PermissionRoute permission={permission}><ModulePlaceholderPage title={title} description={description}/></PermissionRoute>;
 
@@ -31,7 +33,7 @@ export function AppRouter(){
             <Route path="patients/new" element={<PermissionRoute permission="patients.create"><PatientCreatePage/></PermissionRoute>}/>
             <Route path="patients/:id" element={<PermissionRoute permission="patients.view"><PatientDetailPage/></PermissionRoute>}/>
             <Route path="patients/:id/edit" element={<PermissionRoute permission="patients.update"><PatientEditPage/></PermissionRoute>}/>
-            <Route path="appointments/*" element={modulePage("appointments.view","Appointments","Doctor schedules, bookings, queue and appointment operations.")}/>
+            <Route path="appointments/*" element={<PermissionRoute permission="appointments.view"><AppointmentsPage /></PermissionRoute>} />
             <Route path="opd/*" element={modulePage("opd.view","OPD","Out-patient visits, vitals, consultation and clinical orders.")}/>
             <Route path="ipd/*" element={modulePage("ipd.view","IPD","Admissions, beds, nursing, rounds and inpatient management.")}/>
             <Route path="laboratory/*" element={modulePage("laboratory.view","Laboratory","Lab catalog, orders, samples, results and verification.")}/>
@@ -43,7 +45,7 @@ export function AppRouter(){
             <Route path="reports/*" element={modulePage("reports.view","Reports & MIS","Operational reports, analytics and management information.")}/>
             <Route path="notifications/*" element={<ModulePlaceholderPage title="Notifications" description="In-app alerts and communication centre."/>}/>
             <Route path="employees/*" element={modulePage("employees.view","Employees","Employee administration and workforce records.")}/>
-            <Route path="doctors/*" element={modulePage("doctors.view","Doctors","Doctor profiles, credentials and clinical assignment.")}/>
+            <Route path="doctors/*" element={<PermissionRoute permission="doctors.view"><DoctorsPage /></PermissionRoute>} />
             <Route path="departments/*" element={modulePage("departments.view","Departments","Hospital department master and organizational structure.")}/>
             <Route path="users/*" element={modulePage("users.view","Users","Application user accounts and access administration.")}/>
             <Route path="roles/*" element={<PermissionRoute anyOf={["roles.view","permissions.view"]}><ModulePlaceholderPage title="Roles & Permissions" description="Role-based access control and application permissions."/></PermissionRoute>}/>
