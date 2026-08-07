@@ -977,7 +977,9 @@ model PatientFamilyRelationship {
   id                 String       @id @default(uuid()) @db.Uuid
   hospitalId         String       @map("hospital_id") @db.Uuid
   patientId          String       @map("patient_id") @db.Uuid
-  relatedPatientId   String       @map("related_patient_id") @db.Uuid
+  relatedPatientId   String?      @map("related_patient_id") @db.Uuid
+  relatedPersonName  String?      @map("related_person_name") @db.VarChar(150)
+  relatedPersonMobile String?     @map("related_person_mobile") @db.VarChar(20)
   relationshipType   String       @map("relationship_type") @db.VarChar(60)
   isEmergencyContact Boolean      @default(false) @map("is_emergency_contact")
   isPrimaryContact   Boolean      @default(false) @map("is_primary_contact")
@@ -991,7 +993,7 @@ model PatientFamilyRelationship {
 
   hospital       Hospital @relation(fields: [hospitalId], references: [id], onDelete: Restrict)
   patient        Patient  @relation("PatientFamilyFrom", fields: [patientId], references: [id], onDelete: Cascade)
-  relatedPatient Patient  @relation("PatientFamilyTo", fields: [relatedPatientId], references: [id], onDelete: Cascade)
+  relatedPatient Patient? @relation("PatientFamilyTo", fields: [relatedPatientId], references: [id], onDelete: Cascade)
 
   @@unique([hospitalId, patientId, relatedPatientId, relationshipType])
   @@index([hospitalId])

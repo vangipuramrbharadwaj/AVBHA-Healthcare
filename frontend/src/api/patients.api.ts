@@ -124,3 +124,50 @@ export function duplicateSearch(q: string) {
     `/patients/duplicates/search${queryString({ q, limit: 10 })}`,
   );
 }
+
+export function createFamilyRelationship(
+  patientId: string,
+  input: {
+    relatedPatientId?: string;
+    relatedPersonName?: string;
+    relatedPersonMobile?: string;
+    relationshipType: string;
+    isEmergencyContact: boolean;
+    isPrimaryContact: boolean;
+    notes?: string | null;
+  },
+) {
+  return apiRequest<ClinicalRecord>(`/patients/${patientId}/family`, {
+    method: "POST",
+    body: input,
+  });
+}
+
+export function updateFamilyRelationship(
+  patientId: string,
+  relationshipId: string,
+  input: {
+    relationshipType?: string;
+    isEmergencyContact?: boolean;
+    isPrimaryContact?: boolean;
+    notes?: string | null;
+  },
+) {
+  return apiRequest<ClinicalRecord>(
+    `/patients/${patientId}/family/${relationshipId}`,
+    {
+      method: "PATCH",
+      body: input,
+    },
+  );
+}
+
+export function archiveFamilyRelationship(
+  patientId: string,
+  relationshipId: string,
+) {
+  return apiRequest<null>(
+    `/patients/${patientId}/family/${relationshipId}`,
+    { method: "DELETE" },
+  );
+}

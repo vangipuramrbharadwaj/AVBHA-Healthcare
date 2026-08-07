@@ -104,7 +104,9 @@ export async function createFamily(
   patientId: string,
   userId: string,
   input: {
-    relatedPatientId: string;
+    relatedPatientId?: string | null;
+    relatedPersonName?: string | null;
+    relatedPersonMobile?: string | null;
     relationshipType: string;
     isEmergencyContact: boolean;
     isPrimaryContact: boolean;
@@ -112,25 +114,38 @@ export async function createFamily(
   },
 ) {
   await requirePatient(hospitalId, patientId);
-  if (input.relatedPatientId === patientId) {
+
+  if (!input.relatedPatientId && !input.relatedPersonName?.trim()) {
     throw new AppError(
-      "A patient cannot be related to themselves",
+      "Select an existing patient or enter the family member name",
       400,
       "INVALID_FAMILY_RELATIONSHIP",
     );
   }
-  await requirePatient(hospitalId, input.relatedPatientId);
+
+  if (input.relatedPatientId) {
+    if (input.relatedPatientId === patientId) {
+      throw new AppError(
+        "A patient cannot be related to themselves",
+        400,
+        "INVALID_FAMILY_RELATIONSHIP",
+      );
+    }
+    await requirePatient(hospitalId, input.relatedPatientId);
+  }
 
   const data: Prisma.PatientFamilyRelationshipUncheckedCreateInput = {
     hospitalId,
     patientId,
-    relatedPatientId: input.relatedPatientId,
     relationshipType: input.relationshipType,
     isEmergencyContact: input.isEmergencyContact,
     isPrimaryContact: input.isPrimaryContact,
     createdBy: userId,
     updatedBy: userId,
   };
+  if (input.relatedPatientId) data.relatedPatientId = input.relatedPatientId;
+  if (input.relatedPersonName !== undefined) data.relatedPersonName = input.relatedPersonName;
+  if (input.relatedPersonMobile !== undefined) data.relatedPersonMobile = input.relatedPersonMobile;
   if (input.notes !== undefined) data.notes = input.notes;
 
   return prisma.$transaction(async (tx) => {

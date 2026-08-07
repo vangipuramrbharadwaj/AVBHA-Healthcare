@@ -92,10 +92,18 @@ export async function createFamilyController(
       schema.createFamilyRelationshipSchema.parse(req.body);
 
     const createInput = {
-      relatedPatientId: input.relatedPatientId,
       relationshipType: input.relationshipType,
       isEmergencyContact: input.isEmergencyContact,
       isPrimaryContact: input.isPrimaryContact,
+      ...(input.relatedPatientId !== undefined
+        ? { relatedPatientId: input.relatedPatientId }
+        : {}),
+      ...(input.relatedPersonName !== undefined
+        ? { relatedPersonName: input.relatedPersonName }
+        : {}),
+      ...(input.relatedPersonMobile !== undefined
+        ? { relatedPersonMobile: input.relatedPersonMobile }
+        : {}),
       ...(input.notes !== undefined
         ? { notes: input.notes }
         : {}),

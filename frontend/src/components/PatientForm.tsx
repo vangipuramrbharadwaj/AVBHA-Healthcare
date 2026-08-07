@@ -186,26 +186,26 @@ export function PatientForm({
       } else {
         input.addresses = [];
       }
+    }
 
-      if (form.emergencyName.trim() && form.emergencyMobile.trim()) {
-        const emergencyContact: NonNullable<
-          PatientFormInput["emergencyContacts"]
-        >[number] = {
-          contactName: form.emergencyName.trim(),
-          mobile: form.emergencyMobile.trim(),
-          isPrimary: true,
-        };
+    if (form.emergencyName.trim() && form.emergencyMobile.trim()) {
+      const emergencyContact: NonNullable<
+        PatientFormInput["emergencyContacts"]
+      >[number] = {
+        contactName: form.emergencyName.trim(),
+        mobile: form.emergencyMobile.trim(),
+        isPrimary: true,
+      };
 
-        assignOptionalString(
-          emergencyContact,
-          "relationship",
-          form.emergencyRelationship,
-        );
+      assignOptionalString(
+        emergencyContact,
+        "relationship",
+        form.emergencyRelationship,
+      );
 
-        input.emergencyContacts = [emergencyContact];
-      } else {
-        input.emergencyContacts = [];
-      }
+      input.emergencyContacts = [emergencyContact];
+    } else if (!patient) {
+      input.emergencyContacts = [];
     }
 
     await onSubmit(input);
@@ -483,123 +483,118 @@ export function PatientForm({
         </div>
       </section>
 
-      {!patient ? (
-        <>
-          <section className="form-section">
-            <div className="form-section-heading">
-              <h2>Primary address</h2>
-              <p>Optional during quick registration.</p>
-            </div>
 
-            <div className="form-grid form-grid-3">
-              <label className="span-2">
-                <span>Address line 1</span>
-                <input
-                  value={form.addressLine1}
-                  onChange={(event) =>
-                    update("addressLine1", event.target.value)
-                  }
-                />
-              </label>
+{!patient ? (
+  <section className="form-section">
+    <div className="form-section-heading">
+      <h2>Primary address</h2>
+      <p>Optional during quick registration.</p>
+    </div>
 
-              <label>
-                <span>Address line 2</span>
-                <input
-                  value={form.addressLine2}
-                  onChange={(event) =>
-                    update("addressLine2", event.target.value)
-                  }
-                />
-              </label>
+    <div className="form-grid form-grid-3">
+      <label className="span-2">
+        <span>Address line 1</span>
+        <input
+          value={form.addressLine1}
+          onChange={(event) =>
+            update("addressLine1", event.target.value)
+          }
+        />
+      </label>
 
-              <label>
-                <span>City</span>
-                <input
-                  value={form.city}
-                  onChange={(event) =>
-                    update("city", event.target.value)
-                  }
-                />
-              </label>
+      <label>
+        <span>Address line 2</span>
+        <input
+          value={form.addressLine2}
+          onChange={(event) =>
+            update("addressLine2", event.target.value)
+          }
+        />
+      </label>
 
-              <label>
-                <span>District</span>
-                <input
-                  value={form.district}
-                  onChange={(event) =>
-                    update("district", event.target.value)
-                  }
-                />
-              </label>
+      <label>
+        <span>City</span>
+        <input
+          value={form.city}
+          onChange={(event) =>
+            update("city", event.target.value)
+          }
+        />
+      </label>
 
-              <label>
-                <span>State</span>
-                <input
-                  value={form.state}
-                  onChange={(event) =>
-                    update("state", event.target.value)
-                  }
-                />
-              </label>
+      <label>
+        <span>District</span>
+        <input
+          value={form.district}
+          onChange={(event) =>
+            update("district", event.target.value)
+          }
+        />
+      </label>
 
-              <label>
-                <span>Postal code</span>
-                <input
-                  value={form.postalCode}
-                  onChange={(event) =>
-                    update("postalCode", event.target.value)
-                  }
-                />
-              </label>
-            </div>
-          </section>
+      <label>
+        <span>State</span>
+        <input
+          value={form.state}
+          onChange={(event) =>
+            update("state", event.target.value)
+          }
+        />
+      </label>
 
-          <section className="form-section">
-            <div className="form-section-heading">
-              <h2>Emergency contact</h2>
-              <p>
-                Optional contact for emergencies and family
-                communication.
-              </p>
-            </div>
+      <label>
+        <span>Postal code</span>
+        <input
+          value={form.postalCode}
+          onChange={(event) =>
+            update("postalCode", event.target.value)
+          }
+        />
+      </label>
+    </div>
+  </section>
+) : null}
 
-            <div className="form-grid form-grid-3">
-              <label>
-                <span>Contact name</span>
-                <input
-                  value={form.emergencyName}
-                  onChange={(event) =>
-                    update("emergencyName", event.target.value)
-                  }
-                />
-              </label>
+<section className="form-section">
+  <div className="form-section-heading">
+    <h2>Emergency contact</h2>
+    <p>
+      Primary contact for emergencies and family communication.
+    </p>
+  </div>
 
-              <label>
-                <span>Relationship</span>
-                <input
-                  value={form.emergencyRelationship}
-                  onChange={(event) =>
-                    update(
-                      "emergencyRelationship",
-                      event.target.value,
-                    )
-                  }
-                />
-              </label>
+  <div className="form-grid form-grid-3">
+    <label>
+      <span>Contact name</span>
+      <input
+        value={form.emergencyName}
+        onChange={(event) =>
+          update("emergencyName", event.target.value)
+        }
+      />
+    </label>
 
-              <label>
-                <span>Mobile</span>
-                <input
-                  value={form.emergencyMobile}
-                  onChange={(event) =>
-                    update("emergencyMobile", event.target.value)
-                  }
-                />
-              </label>
-            </div>
-          </section>
-        </>
-      ) : null}
+    <label>
+      <span>Relationship</span>
+      <input
+        value={form.emergencyRelationship}
+        onChange={(event) =>
+          update("emergencyRelationship", event.target.value)
+        }
+      />
+    </label>
+
+    <label>
+      <span>Mobile</span>
+      <input
+        value={form.emergencyMobile}
+        onChange={(event) =>
+          update("emergencyMobile", event.target.value)
+        }
+      />
+    </label>
+  </div>
+</section>
 
       <section className="form-section">
         <div className="form-section-heading">

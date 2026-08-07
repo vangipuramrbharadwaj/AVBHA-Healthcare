@@ -87,6 +87,12 @@ export const createPatientSchema = patientBaseSchema.extend({
 
 export const updatePatientSchema = patientBaseSchema
   .partial()
+  .extend({
+    emergencyContacts: z
+      .array(patientEmergencyContactSchema)
+      .max(5)
+      .optional(),
+  })
   .refine((value) => Object.keys(value).length > 0, {
     message: "At least one field is required",
   });

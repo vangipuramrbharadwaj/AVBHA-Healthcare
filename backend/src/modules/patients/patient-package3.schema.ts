@@ -18,17 +18,31 @@ export const advancedSearchSchema = z.object({
   pageSize: z.coerce.number().int().min(1).max(100).default(20),
 });
 export const createFamilyRelationshipSchema = z.object({
-  relatedPatientId: z.string().uuid(),
+  relatedPatientId: z.string().uuid().optional().nullable(),
+  relatedPersonName: z.string().trim().min(2).max(150).optional().nullable(),
+  relatedPersonMobile: z.string().trim().min(5).max(20).optional().nullable(),
   relationshipType: z.string().trim().min(2).max(60),
   isEmergencyContact: z.boolean().default(false),
   isPrimaryContact: z.boolean().default(false),
   notes: z.string().trim().max(2000).optional().nullable(),
+}).refine(
+  (value) => Boolean(value.relatedPatientId || value.relatedPersonName),
+  {
+    message: "Select an existing patient or enter the family member name",
+    path: ["relatedPersonName"],
+  },
+);
+
+export const updateFamilyRelationshipSchema = z.object({
+  relatedPersonName: z.string().trim().min(2).max(150).optional().nullable(),
+  relatedPersonMobile: z.string().trim().min(5).max(20).optional().nullable(),
+  relationshipType: z.string().trim().min(2).max(60).optional(),
+  isEmergencyContact: z.boolean().optional(),
+  isPrimaryContact: z.boolean().optional(),
+  notes: z.string().trim().max(2000).optional().nullable(),
+}).refine((value) => Object.keys(value).length > 0, {
+  message: "At least one field is required",
 });
-export const updateFamilyRelationshipSchema =
-  createFamilyRelationshipSchema.omit({ relatedPatientId: true }).partial()
-    .refine((value) => Object.keys(value).length > 0, {
-      message: "At least one field is required",
-    });
 export const createPatientAlertSchema = z.object({
   alertType: z.string().trim().min(2).max(60),
   title: z.string().trim().min(2).max(200),

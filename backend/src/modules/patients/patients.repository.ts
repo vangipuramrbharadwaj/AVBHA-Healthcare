@@ -65,7 +65,7 @@ export async function listPatients(
     conditions.push(Prisma.sql`branch_id = ${query.branchId}::uuid`);
   }
   if (query.status) {
-    conditions.push(Prisma.sql`status = ${query.status}`);
+    conditions.push(Prisma.sql`status = ${query.status}::"RecordStatus"`);
   }
   if (query.gender) {
     conditions.push(Prisma.sql`gender = ${query.gender}`);
@@ -227,14 +227,15 @@ export async function createPatient(
   return prisma.$transaction(async (transaction) => {
     const rows = await transaction.$queryRaw<Record<string, unknown>[]>(Prisma.sql`
       INSERT INTO patients (
-        hospital_id, branch_id, uhid, title, first_name, middle_name, last_name,
+        id, hospital_id, branch_id, uhid, title, first_name, middle_name, last_name,
         gender, date_of_birth, age_years, blood_group, marital_status,
         nationality, religion, primary_mobile, alternate_mobile, email,
         aadhaar_number, pan_number, passport_number, occupation,
         preferred_language, referred_by, referral_source, medical_alerts,
         allergies_summary, chronic_diseases_summary, is_deceased, deceased_at,
-        status, created_by, updated_by
+        status, created_by, updated_at, updated_by
       ) VALUES (
+        gen_random_uuid(),
         ${hospitalId}::uuid,
         ${input.branchId ?? null}::uuid,
         ${uhid},
@@ -264,8 +265,9 @@ export async function createPatient(
         ${input.chronicDiseasesSummary ?? null},
         ${input.isDeceased},
         ${input.deceasedAt ?? null},
-        ${input.status},
+        ${input.status}::"RecordStatus",
         ${userId}::uuid,
+        NOW(),
         ${userId}::uuid
       )
       RETURNING *
@@ -387,7 +389,7 @@ export async function updatePatient(
     };
 
     for (const [key, value] of Object.entries(input)) {
-      if (value === undefined) {
+      if (value === undefined || key === "emergencyContacts") {
         continue;
       }
 
@@ -396,7 +398,58 @@ export async function updatePatient(
         continue;
       }
 
-      sets.push(Prisma.sql`${Prisma.raw(column)} = ${value as never}`);
+      if (key === "status") {
+        sets.push(
+          Prisma.sql`${Prisma.raw(column)} = ${value as never}::"RecordStatus"`,
+        );
+        continue;
+      }
+
+      sets.push(
+        Prisma.sql`${Prisma.raw(column)} = ${value as never}`,
+      );
+    }
+
+    if (input.emergencyContacts !== undefined && input.emergencyContacts.length > 0) {
+      const contact = input.emergencyContacts[0]!;
+
+      const existingContact = await transaction.patientEmergencyContact.findFirst({
+        where: {
+          hospitalId,
+          patientId: id,
+        },
+        orderBy: [
+          { isPrimary: "desc" },
+          { createdAt: "asc" },
+        ],
+      });
+
+      if (existingContact) {
+        await transaction.patientEmergencyContact.update({
+          where: { id: existingContact.id },
+          data: {
+            contactName: contact.contactName,
+            relationship: contact.relationship ?? null,
+            mobile: contact.mobile,
+            alternateMobile: contact.alternateMobile ?? null,
+            email: contact.email ?? null,
+            isPrimary: true,
+          },
+        });
+      } else {
+        await transaction.patientEmergencyContact.create({
+          data: {
+            hospitalId,
+            patientId: id,
+            contactName: contact.contactName,
+            relationship: contact.relationship ?? null,
+            mobile: contact.mobile,
+            alternateMobile: contact.alternateMobile ?? null,
+            email: contact.email ?? null,
+            isPrimary: true,
+          },
+        });
+      }
     }
 
     const rows = await transaction.$queryRaw<Record<string, unknown>[]>(Prisma.sql`

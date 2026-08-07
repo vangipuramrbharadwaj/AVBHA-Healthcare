@@ -11,6 +11,7 @@ export const navigationItems: NavItem[] = [
   { label: "Dashboard", path: "/", symbol: "⌂", permission: "dashboard.view", section: "Clinical" },
   { label: "Patients", path: "/patients", symbol: "◉", permission: "patients.view", section: "Clinical" },
   { label: "Appointments", path: "/appointments", symbol: "▣", permission: "appointments.view", section: "Clinical" },
+  { label: "Reception", path: "/reception", symbol: "◆", permission: "appointments.view", section: "Clinical" },
   { label: "OPD", path: "/opd", symbol: "✚", permission: "opd.view", section: "Clinical" },
   { label: "IPD", path: "/ipd", symbol: "▤", permission: "ipd.view", section: "Clinical" },
   { label: "Laboratory", path: "/laboratory", symbol: "◈", permission: "laboratory.view", section: "Clinical" },

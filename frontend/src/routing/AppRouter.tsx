@@ -12,6 +12,7 @@ import { PatientDetailPage } from "../pages/PatientDetailPage";
 import { PatientEditPage } from "../pages/PatientEditPage";
 import { ProtectedRoute } from "./ProtectedRoute";
 import { PermissionRoute } from "./PermissionRoute";
+import ReceptionOpdPage from "../pages/ReceptionOpdPage";
 
 const modulePage=(permission:string,title:string,description:string)=><PermissionRoute permission={permission}><ModulePlaceholderPage title={title} description={description}/></PermissionRoute>;
 
@@ -24,7 +25,9 @@ export function AppRouter(){
           <Route path="/change-password" element={<ChangePasswordPage/>}/>
           <Route element={<AppLayout/>}>
             <Route index element={<PermissionRoute permission="dashboard.view"><DashboardPage/></PermissionRoute>}/>
-            <Route path="patients" element={<PermissionRoute permission="patients.view"><PatientsPage/></PermissionRoute>}/>
+            
+        <Route path="reception" element={<ReceptionOpdPage />} />
+<Route path="patients" element={<PermissionRoute permission="patients.view"><PatientsPage/></PermissionRoute>}/>
             <Route path="patients/new" element={<PermissionRoute permission="patients.create"><PatientCreatePage/></PermissionRoute>}/>
             <Route path="patients/:id" element={<PermissionRoute permission="patients.view"><PatientDetailPage/></PermissionRoute>}/>
             <Route path="patients/:id/edit" element={<PermissionRoute permission="patients.update"><PatientEditPage/></PermissionRoute>}/>
