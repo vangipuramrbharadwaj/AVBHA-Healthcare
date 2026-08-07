@@ -278,45 +278,73 @@ export async function createPatient(
       throw new Error("Patient creation failed");
     }
 
-    for (const address of input.addresses) {
-      await transaction.$executeRaw(Prisma.sql`
-        INSERT INTO patient_addresses (
-          hospital_id, patient_id, address_type, address_line1, address_line2,
-          landmark, city, district, state, country, postal_code, is_primary
-        ) VALUES (
-          ${hospitalId}::uuid,
-          ${String(patient.id)}::uuid,
-          ${address.addressType},
-          ${address.addressLine1},
-          ${address.addressLine2 ?? null},
-          ${address.landmark ?? null},
-          ${address.city ?? null},
-          ${address.district ?? null},
-          ${address.state ?? null},
-          ${address.country},
-          ${address.postalCode ?? null},
-          ${address.isPrimary}
-        )
-      `);
-    }
+for (const address of input.addresses) {
+  await transaction.$executeRaw(Prisma.sql`
+    INSERT INTO patient_addresses (
+      id,
+      hospital_id,
+      patient_id,
+      address_type,
+      address_line1,
+      address_line2,
+      landmark,
+      city,
+      district,
+      state,
+      country,
+      postal_code,
+      is_primary,
+      created_at,
+      updated_at
+    ) VALUES (
+      gen_random_uuid(),
+      ${hospitalId}::uuid,
+      ${String(patient.id)}::uuid,
+      ${address.addressType},
+      ${address.addressLine1},
+      ${address.addressLine2 ?? null},
+      ${address.landmark ?? null},
+      ${address.city ?? null},
+      ${address.district ?? null},
+      ${address.state ?? null},
+      ${address.country},
+      ${address.postalCode ?? null},
+      ${address.isPrimary},
+      NOW(),
+      NOW()
+    )
+  `);
+}
 
-    for (const contact of input.emergencyContacts) {
-      await transaction.$executeRaw(Prisma.sql`
-        INSERT INTO patient_emergency_contacts (
-          hospital_id, patient_id, contact_name, relationship, mobile,
-          alternate_mobile, email, is_primary
-        ) VALUES (
-          ${hospitalId}::uuid,
-          ${String(patient.id)}::uuid,
-          ${contact.contactName},
-          ${contact.relationship ?? null},
-          ${contact.mobile},
-          ${contact.alternateMobile ?? null},
-          ${contact.email ?? null},
-          ${contact.isPrimary}
-        )
-      `);
-    }
+for (const contact of input.emergencyContacts) {
+  await transaction.$executeRaw(Prisma.sql`
+    INSERT INTO patient_emergency_contacts (
+      id,
+      hospital_id,
+      patient_id,
+      contact_name,
+      relationship,
+      mobile,
+      alternate_mobile,
+      email,
+      is_primary,
+      created_at,
+      updated_at
+    ) VALUES (
+      gen_random_uuid(),
+      ${hospitalId}::uuid,
+      ${String(patient.id)}::uuid,
+      ${contact.contactName},
+      ${contact.relationship ?? null},
+      ${contact.mobile},
+      ${contact.alternateMobile ?? null},
+      ${contact.email ?? null},
+      ${contact.isPrimary},
+      NOW(),
+      NOW()
+    )
+  `);
+}
 
     await transaction.auditLog.create({
       data: {

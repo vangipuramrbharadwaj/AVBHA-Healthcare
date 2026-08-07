@@ -8,7 +8,7 @@ import {
   useLocation,
   useParams,
 } from "react-router-dom";
-import { getPatient } from "../api/patients.api";
+import { getPatient, listFamily } from "../api/patients.api";
 import { PermissionGate } from "../auth/PermissionGate";
 import { Alert } from "../components/Alert";
 import { PageHeader } from "../components/PageHeader";
@@ -16,7 +16,7 @@ import { PatientClinicalPanel } from "../components/PatientClinicalPanel";
 import { Spinner } from "../components/Spinner";
 import { StatusBadge } from "../components/StatusBadge";
 import { ApiClientError } from "../types/api";
-import type { Patient } from "../types/patient";
+import type { ClinicalRecord, Patient } from "../types/patient";
 
 type Tab =
   | "overview"
@@ -72,22 +72,34 @@ export function PatientDetailPage() {
 
   const [patient, setPatient] =
     useState<Patient | null>(null);
+  const [family, setFamily] = useState<ClinicalRecord[]>([]);
   const [tab, setTab] = useState<Tab>("overview");
   const [loading, setLoading] = useState(true);
   const [error, setError] =
     useState<string | null>(null);
 
+  async function loadPatientData() {
+    try {
+      const [patientResult, familyResult] = await Promise.all([
+        getPatient(id),
+        listFamily(id).catch(() => [] as ClinicalRecord[]),
+      ]);
+      setPatient(patientResult);
+      setFamily(familyResult);
+      setError(null);
+    } catch (value) {
+      setError(
+        value instanceof ApiClientError
+          ? value.message
+          : "Patient could not be loaded",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
   useEffect(() => {
-    getPatient(id)
-      .then(setPatient)
-      .catch((value) =>
-        setError(
-          value instanceof ApiClientError
-            ? value.message
-            : "Patient could not be loaded",
-        ),
-      )
-      .finally(() => setLoading(false));
+    void loadPatientData();
   }, [id]);
 
   const fullName = useMemo(
@@ -104,6 +116,58 @@ export function PatientDetailPage() {
         : "",
     [patient],
   );
+
+  const emergencyContacts = useMemo(() => {
+    const direct = (patient?.emergencyContacts ?? []).map((contact, index) => ({
+      key: String(contact.id ?? `direct-${index}`),
+      name: String(contact.contactName ?? contact.contact_name ?? "Emergency contact"),
+      relationship: String(contact.relationship ?? ""),
+      mobile: String(contact.mobile ?? ""),
+      source: "DIRECT" as const,
+    }));
+
+    const fromFamily = family
+      .filter((record) =>
+        Boolean(record.isEmergencyContact ?? record.is_emergency_contact),
+      )
+      .map((record, index) => {
+        const related = record.relatedPatient as Patient | undefined;
+        const name = related
+          ? [related.firstName, related.middleName, related.lastName]
+              .filter(Boolean)
+              .join(" ")
+          : String(
+              record.relatedPersonName ??
+                record.related_person_name ??
+                "Family member",
+            );
+        const mobile = related?.primaryMobile
+          ? String(related.primaryMobile)
+          : String(
+              record.relatedPersonMobile ??
+                record.related_person_mobile ??
+                "",
+            );
+
+        return {
+          key: String(record.id ?? `family-${index}`),
+          name,
+          relationship: String(
+            record.relationshipType ?? record.relationship_type ?? "",
+          ),
+          mobile,
+          source: "FAMILY" as const,
+        };
+      });
+
+    const seen = new Set<string>();
+    return [...direct, ...fromFamily].filter((contact) => {
+      const identity = `${contact.name.trim().toLowerCase()}|${contact.mobile.trim()}`;
+      if (seen.has(identity)) return false;
+      seen.add(identity);
+      return true;
+    });
+  }, [patient, family]);
 
   if (loading) {
     return (
@@ -407,32 +471,29 @@ export function PatientDetailPage() {
                   </div>
                 </div>
 
-                {!patient.emergencyContacts
-                  ?.length ? (
+                {!emergencyContacts.length ? (
                   <p className="muted-copy">
                     No emergency contact recorded.
                   </p>
                 ) : (
-                  patient.emergencyContacts.map(
-                    (contact, index) => (
-                      <div
-                        className="address-card"
-                        key={contact.id ?? index}
-                      >
-                        <strong>
-                          {contact.contactName ??
-                            contact.contact_name}
-                        </strong>
-                        <p>
-                          {contact.relationship ||
-                            "Relationship not specified"}
-                        </p>
-                        <small>
-                          {contact.mobile}
-                        </small>
-                      </div>
-                    ),
-                  )
+                  emergencyContacts.map((contact) => (
+                    <div
+                      className="address-card emergency-contact-card"
+                      key={contact.key}
+                    >
+                      <strong>{contact.name}</strong>
+                      <p>
+                        {contact.relationship ||
+                          "Relationship not specified"}
+                      </p>
+                      <small>
+                        {contact.mobile || "Mobile not recorded"}
+                        {contact.source === "FAMILY"
+                          ? " · Family contact"
+                          : ""}
+                      </small>
+                    </div>
+                  ))
                 )}
               </section>
             </div>
@@ -440,6 +501,7 @@ export function PatientDetailPage() {
             <PatientClinicalPanel
               patientId={patient.id}
               panel={tab}
+              onPatientDataChanged={loadPatientData}
             />
           )}
         </>

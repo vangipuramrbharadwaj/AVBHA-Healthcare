@@ -77,6 +77,22 @@ export function createClinicalResource(
   });
 }
 
+
+export function updateClinicalResource(
+  id: string,
+  resource: ClinicalResource,
+  resourceId: string,
+  input: Record<string, unknown>,
+) {
+  return apiRequest<ClinicalRecord>(
+    `/patients/${id}/${resource}/${resourceId}`,
+    {
+      method: "PATCH",
+      body: input,
+    },
+  );
+}
+
 export function archiveClinicalResource(
   id: string,
   resource: ClinicalResource,
@@ -94,6 +110,18 @@ export function listAlerts(id: string) {
 export function createAlert(id: string, input: Record<string, unknown>) {
   return apiRequest<ClinicalRecord>(`/patients/${id}/alerts`, {
     method: "POST",
+    body: input,
+  });
+}
+
+
+export function updateAlert(
+  id: string,
+  alertId: string,
+  input: Record<string, unknown>,
+) {
+  return apiRequest<ClinicalRecord>(`/patients/${id}/alerts/${alertId}`, {
+    method: "PATCH",
     body: input,
   });
 }

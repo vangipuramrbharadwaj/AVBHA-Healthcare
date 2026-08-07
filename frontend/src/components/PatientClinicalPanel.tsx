@@ -12,6 +12,8 @@ import {
   listFamily,
   listIdentifiers,
   listTimeline,
+  updateAlert,
+  updateClinicalResource,
   updateFamilyRelationship,
   type ClinicalResource,
 } from "../api/patients.api";
@@ -51,14 +53,96 @@ function valueOf(record: ClinicalRecord, keys: string[]) {
   return "—";
 }
 
+function stringValue(record: ClinicalRecord | undefined, keys: string[]): string {
+  if (!record) return "";
+  for (const key of keys) {
+    const value = record[key];
+    if (value !== undefined && value !== null && value !== "") return String(value);
+  }
+  return "";
+}
+
+function dateInputValue(record: ClinicalRecord | undefined, keys: string[]): string {
+  const value = stringValue(record, keys);
+  return value ? value.slice(0, 10) : "";
+}
+
+function initialResourceForm(panel: Panel, record?: ClinicalRecord): Record<string, string> {
+  if (!record) return {};
+
+  if (panel === "insurances") {
+    return {
+      providerName: stringValue(record, ["providerName", "provider_name"]),
+      policyNumber: stringValue(record, ["policyNumber", "policy_number"]),
+      memberId: stringValue(record, ["memberId", "member_id"]),
+      planName: stringValue(record, ["planName", "plan_name"]),
+      validTo: dateInputValue(record, ["validTo", "valid_to"]),
+    };
+  }
+
+  if (panel === "allergies") {
+    return {
+      allergen: stringValue(record, ["allergen"]),
+      allergyType: stringValue(record, ["allergyType", "allergy_type"]),
+      reaction: stringValue(record, ["reaction"]),
+      severity: stringValue(record, ["severity"]),
+    };
+  }
+
+  if (panel === "chronic-diseases") {
+    return {
+      diseaseName: stringValue(record, ["diseaseName", "disease_name"]),
+      diagnosisDate: dateInputValue(record, ["diagnosisDate", "diagnosis_date"]),
+      diagnosingDoctor: stringValue(record, ["diagnosingDoctor", "diagnosing_doctor"]),
+      controlStatus: stringValue(record, ["controlStatus", "control_status"]),
+    };
+  }
+
+  if (panel === "medical-history") {
+    return {
+      historyType: stringValue(record, ["historyType", "history_type"]),
+      title: stringValue(record, ["title"]),
+      eventDate: dateInputValue(record, ["eventDate", "event_date"]),
+      provider: stringValue(record, ["provider"]),
+    };
+  }
+
+  if (panel === "documents") {
+    return {
+      documentType: stringValue(record, ["documentType", "document_type"]),
+      documentName: stringValue(record, ["documentName", "document_name"]),
+      filePath: stringValue(record, ["filePath", "file_path"]),
+      mimeType: stringValue(record, ["mimeType", "mime_type"]),
+    };
+  }
+
+  if (panel === "alerts") {
+    return {
+      alertType: stringValue(record, ["alertType", "alert_type"]),
+      title: stringValue(record, ["title"]),
+      description: stringValue(record, ["description"]),
+      severity: stringValue(record, ["severity"]) || "INFO",
+    };
+  }
+
+  return {};
+}
+
 function AddResourceForm({
   panel,
+  record,
   onSubmit,
 }: {
   panel: Panel;
+  record?: ClinicalRecord;
   onSubmit(input: Record<string, unknown>): Promise<void>;
 }) {
-  const [form, setForm] = useState<Record<string, string>>({});
+  const [form, setForm] = useState<Record<string, string>>(() =>
+    initialResourceForm(panel, record),
+  );
+  const [saving, setSaving] = useState(false);
+  const isEdit = Boolean(record?.id);
+
   const field = (name: string, label: string, required = false, type = "text") => (
     <label className={required ? "required" : ""}>
       <span>{label}</span>
@@ -80,20 +164,26 @@ function AddResourceForm({
     );
     const input: Record<string, unknown> = { ...raw };
 
-    if (panel === "insurances") {
+    if (!isEdit && panel === "insurances") {
       input.preAuthRequired = false;
       input.isPrimary = false;
     }
-    if (panel === "allergies") input.verified = false;
-    if (panel === "documents") {
+    if (!isEdit && panel === "allergies") input.verified = false;
+    if (!isEdit && panel === "documents") {
       input.confidential = false;
       input.verified = false;
     }
     if (panel === "alerts") {
       input.severity = form.severity || "INFO";
-      input.active = true;
+      if (!isEdit) input.active = true;
     }
-    await onSubmit(input);
+
+    setSaving(true);
+    try {
+      await onSubmit(input);
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -166,7 +256,9 @@ function AddResourceForm({
         </label>
       </> : null}
 
-      <button className="button button-primary">Save</button>
+      <button className="button button-primary" disabled={saving}>
+        {saving ? "Saving…" : isEdit ? "Save changes" : "Save"}
+      </button>
     </form>
   );
 }
@@ -412,9 +504,11 @@ function FamilyForm({
 export function PatientClinicalPanel({
   patientId,
   panel,
+  onPatientDataChanged,
 }: {
   patientId: string;
   panel: Panel;
+  onPatientDataChanged?: () => void | Promise<void>;
 }) {
   const { can, hasRole } = useAuth();
   const editable = hasRole("SUPER_ADMIN") || can("patients.update");
@@ -424,6 +518,7 @@ export function PatientClinicalPanel({
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState(false);
   const [editingFamily, setEditingFamily] = useState<ClinicalRecord | undefined>();
+  const [editingRecord, setEditingRecord] = useState<ClinicalRecord | undefined>();
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -453,17 +548,27 @@ export function PatientClinicalPanel({
 
   useEffect(() => void load(), [load]);
 
-  async function add(input: Record<string, unknown>) {
+  async function saveResource(input: Record<string, unknown>) {
     try {
-      if (panel === "alerts") await createAlert(patientId, input);
-      else if (
+      if (panel === "alerts") {
+        if (editingRecord?.id) {
+          await updateAlert(patientId, editingRecord.id, input);
+        } else {
+          await createAlert(patientId, input);
+        }
+      } else if (
         panel !== "family" &&
         panel !== "identifiers" &&
         panel !== "timeline"
       ) {
-        await createClinicalResource(patientId, panel, input);
+        if (editingRecord?.id) {
+          await updateClinicalResource(patientId, panel, editingRecord.id, input);
+        } else {
+          await createClinicalResource(patientId, panel, input);
+        }
       }
       setModal(false);
+      setEditingRecord(undefined);
       await load();
     } catch (value) {
       setError(
@@ -494,6 +599,7 @@ export function PatientClinicalPanel({
     try {
       await archiveFamilyRelationship(patientId, record.id);
       await load();
+      await onPatientDataChanged?.();
     } catch (value) {
       setError(
         value instanceof ApiClientError
@@ -526,6 +632,7 @@ export function PatientClinicalPanel({
             className="button button-secondary"
             onClick={() => {
               setEditingFamily(undefined);
+              setEditingRecord(undefined);
               setModal(true);
             }}
           >
@@ -616,6 +723,18 @@ export function PatientClinicalPanel({
                   </StatusBadge>
                 ) : null}
 
+                {editable && addSupported ? (
+                  <button
+                    className="text-button"
+                    onClick={() => {
+                      setEditingRecord(item);
+                      setModal(true);
+                    }}
+                  >
+                    Edit
+                  </button>
+                ) : null}
+
                 {panel === "alerts" && editable && !item.acknowledgedAt && !item.acknowledged_at ? (
                   <button
                     className="text-button"
@@ -650,11 +769,14 @@ export function PatientClinicalPanel({
               ? editingFamily
                 ? "Edit family relationship"
                 : "Add family relationship"
-              : `Add ${config[panel].title}`
+              : editingRecord
+                ? `Edit ${config[panel].title}`
+                : `Add ${config[panel].title}`
           }
           onClose={() => {
             setModal(false);
             setEditingFamily(undefined);
+            setEditingRecord(undefined);
           }}
         >
           {panel === "family" ? (
@@ -665,10 +787,15 @@ export function PatientClinicalPanel({
                 setModal(false);
                 setEditingFamily(undefined);
                 await load();
+                await onPatientDataChanged?.();
               }}
             />
           ) : (
-            <AddResourceForm panel={panel} onSubmit={add} />
+            <AddResourceForm
+              panel={panel}
+              {...(editingRecord ? { record: editingRecord } : {})}
+              onSubmit={saveResource}
+            />
           )}
         </Modal>
       ) : null}

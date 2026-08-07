@@ -1,6 +1,21 @@
 import { useMemo, useState, type FormEvent } from "react";
 import type { Patient, PatientFormInput } from "../types/patient";
 
+const RELATIONSHIP_OPTIONS = [
+  ["WIFE", "Wife"],
+  ["HUSBAND", "Husband"],
+  ["FATHER", "Father"],
+  ["MOTHER", "Mother"],
+  ["SON", "Son"],
+  ["DAUGHTER", "Daughter"],
+  ["BROTHER", "Brother"],
+  ["SISTER", "Sister"],
+  ["GRANDFATHER", "Grandfather"],
+  ["GRANDMOTHER", "Grandmother"],
+  ["GUARDIAN", "Guardian"],
+  ["OTHER", "Other"],
+] as const;
+
 type FormState = {
   title: string;
   firstName: string;
@@ -576,12 +591,19 @@ export function PatientForm({
 
     <label>
       <span>Relationship</span>
-      <input
+      <select
         value={form.emergencyRelationship}
         onChange={(event) =>
           update("emergencyRelationship", event.target.value)
         }
-      />
+      >
+        <option value="">Select relationship</option>
+        {RELATIONSHIP_OPTIONS.map(([value, label]) => (
+          <option key={value} value={value}>
+            {label}
+          </option>
+        ))}
+      </select>
     </label>
 
     <label>
