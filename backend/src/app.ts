@@ -1,3 +1,4 @@
+import { communicationsRouter } from "./modules/communications";
 import { inventoryRouter } from "./modules/inventory";
 import { systemHealthRouter } from "./modules/system-health";
 import { requestTraceMiddleware } from "./middleware/request-trace.middleware";
@@ -93,6 +94,7 @@ app.use("/api/v1/laboratory", laboratoryRouter);
 app.use("/api/v1/radiology", radiologyRouter);
 app.use("/api/v1/pharmacy", pharmacyRouter);
 app.use("/api/v1/inventory", inventoryRouter);
+app.use("/api/v1/communications", communicationsRouter);
 app.use("/api/v1/billing", billingRouter);
 app.use("/api/v1/operation-theatre", operationTheatreRouter);
 app.use("/api/v1/patients", patientClinicalRouter);

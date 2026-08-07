@@ -1,0 +1,119 @@
+// ===== PHASE 13: NOTIFICATION & COMMUNICATION ENGINE =====
+
+enum CommunicationChannel {
+  IN_APP
+  EMAIL
+  SMS
+  WHATSAPP
+}
+
+enum CommunicationPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum CommunicationStatus {
+  QUEUED
+  SCHEDULED
+  PROCESSING
+  SENT
+  DELIVERED
+  READ
+  FAILED
+  CANCELLED
+}
+
+model CommunicationTemplate {
+  id              String               @id @default(uuid()) @db.Uuid
+  hospitalId      String               @map("hospital_id") @db.Uuid
+  code            String               @db.VarChar(80)
+  name            String               @db.VarChar(150)
+  channel         CommunicationChannel
+  subjectTemplate String?              @map("subject_template") @db.VarChar(250)
+  bodyTemplate    String               @map("body_template") @db.Text
+  description     String?              @db.VarChar(1000)
+  active          Boolean              @default(true)
+  createdBy       String?              @map("created_by") @db.Uuid
+  updatedBy       String?              @map("updated_by") @db.Uuid
+  createdAt       DateTime             @default(now()) @map("created_at")
+  updatedAt       DateTime             @updatedAt @map("updated_at")
+
+  messages CommunicationMessage[]
+
+  @@unique([hospitalId, code, channel])
+  @@index([hospitalId, active])
+  @@map("communication_templates")
+}
+
+model CommunicationMessage {
+  id                String                @id @default(uuid()) @db.Uuid
+  hospitalId        String                @map("hospital_id") @db.Uuid
+  branchId          String?               @map("branch_id") @db.Uuid
+  templateId        String?               @map("template_id") @db.Uuid
+  recipientUserId   String?               @map("recipient_user_id") @db.Uuid
+  recipientAddress  String?               @map("recipient_address") @db.VarChar(320)
+  channel           CommunicationChannel
+  status            CommunicationStatus   @default(QUEUED)
+  priority          CommunicationPriority @default(NORMAL)
+  subject           String?               @db.VarChar(250)
+  body              String                @db.Text
+  variables         Json?
+  eventType         String?               @map("event_type") @db.VarChar(100)
+  entityType        String?               @map("entity_type") @db.VarChar(100)
+  entityId          String?               @map("entity_id") @db.VarChar(100)
+  idempotencyKey    String?               @map("idempotency_key") @db.VarChar(120)
+  provider          String?               @db.VarChar(80)
+  providerMessageId String?               @map("provider_message_id") @db.VarChar(200)
+  scheduledAt       DateTime?             @map("scheduled_at")
+  sentAt            DateTime?             @map("sent_at")
+  deliveredAt       DateTime?             @map("delivered_at")
+  readAt            DateTime?             @map("read_at")
+  lastError         String?               @map("last_error") @db.Text
+  createdBy         String?               @map("created_by") @db.Uuid
+  createdAt         DateTime              @default(now()) @map("created_at")
+  updatedAt         DateTime              @updatedAt @map("updated_at")
+
+  template CommunicationTemplate?          @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  attempts CommunicationDeliveryAttempt[]
+
+  @@unique([hospitalId, idempotencyKey])
+  @@index([hospitalId, recipientUserId, channel, readAt])
+  @@index([hospitalId, status, scheduledAt])
+  @@index([hospitalId, eventType, entityType, entityId])
+  @@map("communication_messages")
+}
+
+model CommunicationDeliveryAttempt {
+  id                String              @id @default(uuid()) @db.Uuid
+  hospitalId        String              @map("hospital_id") @db.Uuid
+  messageId         String              @map("message_id") @db.Uuid
+  attemptNumber     Int                 @map("attempt_number")
+  status            CommunicationStatus
+  provider          String?             @db.VarChar(80)
+  providerMessageId String?             @map("provider_message_id") @db.VarChar(200)
+  errorMessage      String?             @map("error_message") @db.Text
+  attemptedAt       DateTime            @default(now()) @map("attempted_at")
+
+  message CommunicationMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, attemptNumber])
+  @@index([hospitalId, status, attemptedAt])
+  @@map("communication_delivery_attempts")
+}
+
+model CommunicationPreference {
+  id         String               @id @default(uuid()) @db.Uuid
+  hospitalId String               @map("hospital_id") @db.Uuid
+  userId     String               @map("user_id") @db.Uuid
+  channel    CommunicationChannel
+  eventType  String               @map("event_type") @db.VarChar(100)
+  enabled    Boolean              @default(true)
+  createdAt  DateTime             @default(now()) @map("created_at")
+  updatedAt  DateTime             @updatedAt @map("updated_at")
+
+  @@unique([hospitalId, userId, channel, eventType])
+  @@index([hospitalId, userId])
+  @@map("communication_preferences")
+}
