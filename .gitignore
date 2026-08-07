@@ -26,3 +26,5 @@ uploads/
 
 # Coverage
 coverage/
+# Vite cache
+frontend/.vite/
