@@ -561,6 +561,52 @@ function Consult({save,disabled,initial}:{save:(x:any)=>void;disabled:boolean;in
   </label>
 ))}<div className="opd-consult-footer"><span>Select “Completed” when the doctor has finished the consultation.</span><button disabled={disabled}>Save Consultation Status</button></div></form>}
 function Diagnosis({save,disabled,rows}:{save:(x:any)=>void;disabled:boolean;rows:any[]}){const submit=(e:FormEvent<HTMLFormElement>)=>{e.preventDefault();const f=e.currentTarget;save({diagnosisType:value(f,"diagnosisType"),diagnosisCode:value(f,"diagnosisCode")||null,diagnosisName:value(f,"diagnosisName"),description:value(f,"description")||null,isPrimary:new FormData(f).get("isPrimary")==="on"})};return <form className="opd-panel" onSubmit={submit}><h3>Diagnosis</h3><Records rows={rows} label={x=>x.diagnosisName}/><div className="opd-form"><label><span>Type</span><select name="diagnosisType"><option>PROVISIONAL</option><option>FINAL</option><option>DIFFERENTIAL</option></select></label><label><span>Code</span><input name="diagnosisCode"/></label><label className="wide"><span>Diagnosis *</span><input required name="diagnosisName"/></label></div><label><span>Description</span><textarea name="description"/></label><label className="check"><input type="checkbox" name="isPrimary"/> Primary diagnosis</label><button disabled={disabled}>Add Diagnosis</button></form>}
-function Prescription({save,disabled,rows}:{save:(x:any)=>void;disabled:boolean;rows:any[]}){const submit=(e:FormEvent<HTMLFormElement>)=>{e.preventDefault();const f=e.currentTarget;save({notes:value(f,"notes")||null,items:[{medicineName:value(f,"medicineName"),dosage:value(f,"dosage")||null,frequency:value(f,"frequency")||null,durationDays:number(f,"durationDays"),instructions:value(f,"instructions")||null}]})};return <form className="opd-panel" onSubmit={submit}><h3>Prescription</h3><Records rows={rows} label={x=>`${x.medicineName}${x.dosage?` · ${x.dosage}`:""}`}/><div className="opd-form"><label className="wide"><span>Medicine *</span><input required name="medicineName"/></label><label><span>Dosage</span><input name="dosage"/></label><label><span>Frequency</span><input name="frequency" placeholder="1-0-1"/></label><label><span>Duration days</span><input name="durationDays" type="number"/></label><label><span>Instructions</span><input name="instructions"/></label></div><label><span>Notes</span><textarea name="notes"/></label><button disabled={disabled}>Add Medicine</button></form>}
+function prescriptionSuggestedQuantity(frequency:string,durationDays:string):string{
+  const days=Number(durationDays);if(!Number.isFinite(days)||days<=0)return "";
+  const pieces=frequency.trim().split(/[-+xX\s]+/).map(Number).filter(Number.isFinite);
+  const perDay=pieces.reduce((t,n)=>t+n,0);return perDay>0?String(perDay*days):"";
+}
+function Prescription({save,disabled,rows}:{save:(x:any)=>void;disabled:boolean;rows:any[]}){
+  const[query,setQuery]=useState("");const[results,setResults]=useState<opd.PrescriptionMedicineSearchResult[]>([]);
+  const[selectedMedicine,setSelectedMedicine]=useState<opd.PrescriptionMedicineSearchResult|null>(null);
+  const[searching,setSearching]=useState(false);const[selectionError,setSelectionError]=useState("");
+  const[frequency,setFrequency]=useState("");const[durationDays,setDurationDays]=useState("");const[quantity,setQuantity]=useState("");
+  useEffect(()=>{const text=query.trim();if(!text||selectedMedicine){setResults([]);return;}let cancelled=false;
+    const timer=window.setTimeout(()=>{setSearching(true);void opd.searchPrescriptionMedicines(text).then(items=>{if(!cancelled)setResults(items)}).catch(()=>{if(!cancelled)setResults([])}).finally(()=>{if(!cancelled)setSearching(false)})},180);
+    return()=>{cancelled=true;window.clearTimeout(timer)}},[query,selectedMedicine]);
+  useEffect(()=>{const suggested=prescriptionSuggestedQuantity(frequency,durationDays);if(suggested)setQuantity(suggested)},[frequency,durationDays]);
+  const submit=(e:FormEvent<HTMLFormElement>)=>{e.preventDefault();if(!selectedMedicine){setSelectionError("Select the medicine from the matching medicine list.");return;}
+    const f=e.currentTarget;save({notes:value(f,"notes")||null,items:[{medicineId:selectedMedicine.id,medicineName:selectedMedicine.brandName,dosage:value(f,"dosage")||null,frequency:value(f,"frequency")||null,durationDays:number(f,"durationDays"),prescribedQuantity:number(f,"prescribedQuantity"),instructions:value(f,"instructions")||null}]});
+    setSelectedMedicine(null);setQuery("");setFrequency("");setDurationDays("");setQuantity("");
+  };
+  return <form className="opd-panel" onSubmit={submit}>
+    <div className="opd-prescription-head"><div><span>CONNECTED TO PHARMACY STOCK</span><h3>Prescription</h3><p>Search and select the exact medicine. Saved medicines immediately appear in the Pharmacy dispensing queue.</p></div></div>
+    <Records rows={rows} label={x=>`${x.medicineName}${x.dosage?` · ${x.dosage}`:""}${x.prescribedQuantity?` · Qty ${Number(x.prescribedQuantity)}`:""}`}/>
+    <div className="opd-medicine-search"><label><span>Medicine *</span><input value={query} autoComplete="off" placeholder="Type brand, generic name or medicine code" onChange={e=>{setQuery(e.target.value);setSelectedMedicine(null);setSelectionError("")}}/></label>
+      {selectionError&&<div className="opd-medicine-selection-error">{selectionError}</div>}
+      {(searching||results.length>0)&&!selectedMedicine&&<div className="opd-medicine-results">
+        <div className="opd-medicine-results-head"><span>Medicine</span><span>Generic / Form</span><span>Available</span><span>Batch</span><span/></div>
+        {searching?<div className="opd-medicine-searching">Searching medicine master…</div>:results.map(m=><button type="button" className="opd-medicine-result" key={m.id} onClick={()=>{setSelectedMedicine(m);setQuery([m.brandName,m.strength].filter(Boolean).join(" "));setResults([])}}>
+          <span><strong>{m.brandName}</strong><small>{[m.strength,m.medicineCode].filter(Boolean).join(" · ")}</small></span>
+          <span><strong>{m.genericName||"—"}</strong><small>{m.dosageForm||"—"}</small></span>
+          <span><strong>{m.totalAvailable}</strong><small>units</small></span>
+          <span><strong>{m.batches[0]?.batchNumber||"Out of stock"}</strong><small>{m.batches.length} active batch{m.batches.length===1?"":"es"} · FEFO</small></span>
+          <span className="opd-medicine-select">Select</span>
+        </button>)}
+      </div>}
+      {selectedMedicine&&<div className="opd-selected-medicine"><div><span>SELECTED MEDICINE</span><strong>{selectedMedicine.brandName} {selectedMedicine.strength||""}</strong><small>{selectedMedicine.genericName||"No generic name"} · {selectedMedicine.dosageForm||"No form"}</small></div><div className="opd-selected-stock"><span>AVAILABLE</span><strong>{selectedMedicine.totalAvailable}</strong><small>{selectedMedicine.batches.length} active batch{selectedMedicine.batches.length===1?"":"es"}</small></div><button type="button" onClick={()=>{setSelectedMedicine(null);setQuery("")}}>Change</button></div>}
+    </div>
+    <div className="opd-form">
+      <label><span>Dosage</span><input name="dosage" placeholder="Example: 1 tablet"/></label>
+      <label><span>Frequency</span><input name="frequency" value={frequency} onChange={e=>setFrequency(e.target.value)} placeholder="1-0-1"/></label>
+      <label><span>Duration days</span><input name="durationDays" type="number" min="1" value={durationDays} onChange={e=>setDurationDays(e.target.value)}/></label>
+      <label><span>Quantity to dispense</span><input name="prescribedQuantity" type="number" min="0.001" step="0.001" value={quantity} onChange={e=>setQuantity(e.target.value)} placeholder="Auto suggested"/></label>
+      <label className="wide"><span>Instructions</span><input name="instructions" placeholder="After food / before food"/></label>
+    </div>
+    <label><span>Prescription notes</span><textarea name="notes"/></label>
+    <div className="opd-prescription-submit"><span>On save, Pharmacy can immediately see the patient and medicine.</span><button disabled={disabled||!selectedMedicine}>Add Medicine to Prescription</button></div>
+  </form>
+}
+
 function Orders({save,disabled,rows}:{save:(x:any)=>void;disabled:boolean;rows:any[]}){const submit=(e:FormEvent<HTMLFormElement>)=>{e.preventDefault();const f=e.currentTarget;save({orderType:value(f,"orderType"),orderName:value(f,"orderName"),priority:value(f,"priority"),instructions:value(f,"instructions")||null})};return <form className="opd-panel" onSubmit={submit}><h3>Clinical Orders</h3><Records rows={rows} label={x=>`${x.orderType} · ${x.orderName}`}/><div className="opd-form"><label><span>Type</span><select name="orderType"><option>LABORATORY</option><option>RADIOLOGY</option><option>PROCEDURE</option><option>OTHER</option></select></label><label><span>Priority</span><select name="priority"><option>NORMAL</option><option>URGENT</option><option>EMERGENCY</option></select></label><label className="wide"><span>Test / procedure *</span><input required name="orderName"/></label></div><label><span>Instructions</span><textarea name="instructions"/></label><button disabled={disabled}>Create Order</button></form>}
 function Follow({save,disabled,rows}:{save:(x:any)=>void;disabled:boolean;rows:any[]}){const submit=(e:FormEvent<HTMLFormElement>)=>{e.preventDefault();const f=e.currentTarget;save({followUpDate:value(f,"followUpDate"),reason:value(f,"reason")||null,notes:value(f,"notes")||null})};return <form className="opd-panel" onSubmit={submit}><h3>Follow-up</h3><Records rows={rows} label={x=>`${String(x.followUpDate??"").slice(0,10)} · ${x.reason??"Follow-up"}`}/><div className="opd-form"><label><span>Date *</span><input required type="date" name="followUpDate"/></label><label><span>Reason</span><input name="reason"/></label></div><label><span>Notes</span><textarea name="notes"/></label><button disabled={disabled}>Add Follow-up</button></form>}

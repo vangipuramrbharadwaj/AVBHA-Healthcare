@@ -12,15 +12,22 @@ import {
   createSupplierController,
   dashboardController,
   inventoryController,
+  listMedicinesController,
+  listSuppliersController,
+  stockLedgerController,
   listPurchaseOrdersController,
   listSalesController,
   receivePurchaseOrderController,
+  prescriptionQueueController,
 } from "./pharmacy.controller";
 import { PHARMACY_PERMISSIONS } from "./pharmacy.permissions";
 
 export const pharmacyRouter = Router();
 pharmacyRouter.use(authenticate, enforceTenant);
 
+pharmacyRouter.get("/medicines", requirePermission(PHARMACY_PERMISSIONS.VIEW), listMedicinesController);
+pharmacyRouter.get("/suppliers", requirePermission(PHARMACY_PERMISSIONS.VIEW), listSuppliersController);
+pharmacyRouter.get("/stock-ledger", requirePermission(PHARMACY_PERMISSIONS.VIEW), stockLedgerController);
 pharmacyRouter.get("/dashboard", requirePermission(PHARMACY_PERMISSIONS.VIEW), dashboardController);
 pharmacyRouter.post("/suppliers", requirePermission(PHARMACY_PERMISSIONS.CREATE), createSupplierController);
 pharmacyRouter.post("/medicines", requirePermission(PHARMACY_PERMISSIONS.CREATE), createMedicineController);
@@ -34,4 +41,5 @@ pharmacyRouter.post("/purchase-orders/:id/receive", requirePermission(PHARMACY_P
 
 pharmacyRouter.post("/sales", requirePermission(PHARMACY_PERMISSIONS.CREATE), createSaleController);
 pharmacyRouter.get("/sales", requirePermission(PHARMACY_PERMISSIONS.VIEW), listSalesController);
+pharmacyRouter.get("/prescription-queue", requirePermission(PHARMACY_PERMISSIONS.VIEW), prescriptionQueueController);
 pharmacyRouter.post("/dispenses", requirePermission(PHARMACY_PERMISSIONS.CREATE), createDispenseController);

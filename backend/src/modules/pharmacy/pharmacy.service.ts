@@ -47,6 +47,31 @@ async function nextDocumentNumber(
   }
 }
 
+
+export async function listMedicines(hospitalId: string, search?: string) {
+  return prisma.pharmacyMedicine.findMany({
+    where: { hospitalId, deletedAt: null, ...(search ? { OR: [
+      { medicineCode: { contains: search, mode: "insensitive" } },
+      { brandName: { contains: search, mode: "insensitive" } },
+      { genericName: { contains: search, mode: "insensitive" } },
+    ] } : {}) },
+    orderBy: { brandName: "asc" },
+    take: 200,
+  });
+}
+
+export async function listSuppliers(hospitalId: string) {
+  return prisma.pharmacySupplier.findMany({ where: { hospitalId, deletedAt: null }, orderBy: { supplierName: "asc" } });
+}
+
+export async function listStockLedger(hospitalId: string, branchId?: string) {
+  return prisma.pharmacyStockTransaction.findMany({
+    where: { hospitalId, ...(branchId ? { branchId } : {}) },
+    include: { medicine: true, batch: true },
+    orderBy: { transactionAt: "desc" }, take: 250,
+  });
+}
+
 export async function createSupplier(
   hospitalId: string,
   userId: string,
@@ -532,6 +557,59 @@ export async function createSale(
     }
 
     return sale;
+  });
+}
+
+export async function listPrescriptionQueue(hospitalId: string,branchId?: string) {
+  const prescriptions = await prisma.opdPrescription.findMany({
+    where: {
+      hospitalId,
+      visit: { deletedAt: null, ...(branchId?{branchId}:{}) },
+      items: { some: { medicineId: { not: null } } },
+    },
+    include: {
+      visit: { include: { patient:true, doctor:{include:{employee:true}}, department:true } },
+      items: {
+        include: {
+          medicine: {
+            include: {
+              batches: {
+                where: { status:"ACTIVE", expiryDate:{gte:new Date()}, availableQuantity:{gt:0}, ...(branchId?{branchId}:{}) },
+                orderBy: [{expiryDate:"asc"},{createdAt:"asc"}],
+              },
+            },
+          },
+        },
+        orderBy:{createdAt:"asc"},
+      },
+    },
+    orderBy:{updatedAt:"desc"}, take:200,
+  });
+  const ids=prescriptions.map((p)=>p.id);
+  const dispenses=ids.length?await prisma.pharmacyDispense.findMany({
+    where:{hospitalId,prescriptionId:{in:ids}}, orderBy:{createdAt:"desc"},
+  }):[];
+  const latest=new Map<string,(typeof dispenses)[number]>();
+  for(const d of dispenses){if(d.prescriptionId&&!latest.has(d.prescriptionId))latest.set(d.prescriptionId,d);}
+  return prescriptions.map((prescription)=>{
+    const dispense=latest.get(prescription.id)??null;
+    return {
+      id:prescription.id,prescriptionId:prescription.id,createdAt:prescription.createdAt,
+      notes:prescription.notes,status:dispense?.status??"PENDING",
+      visit:{id:prescription.visit.id,visitNumber:prescription.visit.visitNumber,visitDate:prescription.visit.visitDate},
+      patient:prescription.visit.patient,doctor:prescription.visit.doctor,department:prescription.visit.department,
+      items:prescription.items.map((item)=>({
+        id:item.id,medicineId:item.medicineId,medicineName:item.medicineName,dosage:item.dosage,
+        frequency:item.frequency,durationDays:item.durationDays,prescribedQuantity:item.prescribedQuantity,
+        instructions:item.instructions,
+        medicine:item.medicine?{
+          id:item.medicine.id,medicineCode:item.medicine.medicineCode,brandName:item.medicine.brandName,
+          genericName:item.medicine.genericName,strength:item.medicine.strength,dosageForm:item.medicine.dosageForm,
+          totalAvailable:item.medicine.batches.reduce((t,b)=>t+Number(b.availableQuantity),0),
+          batches:item.medicine.batches.map((b)=>({id:b.id,batchNumber:b.batchNumber,expiryDate:b.expiryDate,availableQuantity:b.availableQuantity,sellingPrice:b.sellingPrice,rackLocation:b.rackLocation})),
+        }:null,
+      })),
+    };
   });
 }
 

@@ -3,6 +3,17 @@ import { successResponse } from "../../shared/http/api-response";
 import * as schema from "./pharmacy.schema";
 import * as service from "./pharmacy.service";
 
+
+export async function listMedicinesController(req: Request, res: Response, next: NextFunction) {
+  try { const search = typeof req.query.search === "string" ? req.query.search : undefined; const result = await service.listMedicines(req.auth!.hospitalId, search); res.json(successResponse(result, "Medicines retrieved successfully", req.requestId)); } catch (error) { next(error); }
+}
+export async function listSuppliersController(req: Request, res: Response, next: NextFunction) {
+  try { const result = await service.listSuppliers(req.auth!.hospitalId); res.json(successResponse(result, "Suppliers retrieved successfully", req.requestId)); } catch (error) { next(error); }
+}
+export async function stockLedgerController(req: Request, res: Response, next: NextFunction) {
+  try { const branchId = typeof req.query.branchId === "string" ? req.query.branchId : undefined; const result = await service.listStockLedger(req.auth!.hospitalId, branchId); res.json(successResponse(result, "Stock ledger retrieved successfully", req.requestId)); } catch (error) { next(error); }
+}
+
 export async function createSupplierController(req: Request, res: Response, next: NextFunction) {
   try {
     const result = await service.createSupplier(
@@ -166,6 +177,14 @@ export async function createSaleController(req: Request, res: Response, next: Ne
 
     res.status(201).json(successResponse(result, "Pharmacy sale completed successfully", req.requestId));
   } catch (error) { next(error); }
+}
+
+export async function prescriptionQueueController(req: Request,res: Response,next: NextFunction) {
+  try {
+    const branchId=typeof req.query.branchId==="string"&&req.query.branchId?req.query.branchId:undefined;
+    const result=await service.listPrescriptionQueue(req.auth!.hospitalId,branchId);
+    res.json(successResponse(result,"Pharmacy prescription queue retrieved successfully",req.requestId));
+  } catch(error){next(error);}
 }
 
 export async function createDispenseController(req: Request, res: Response, next: NextFunction) {

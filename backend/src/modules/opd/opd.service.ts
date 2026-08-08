@@ -172,7 +172,7 @@ export async function getVisit(
       diagnoses: true,
       prescription: {
         include: {
-          items: true,
+          items: { include: { medicine: true } },
         },
       },
       orders: true,
@@ -326,6 +326,51 @@ export async function addDiagnosis(
   });
 }
 
+export async function searchPrescriptionMedicines(
+  hospitalId: string,
+  query: { q: string; branchId?: string },
+) {
+  const medicines = await prisma.pharmacyMedicine.findMany({
+    where: {
+      hospitalId, deletedAt: null, status: "ACTIVE",
+      OR: [
+        { brandName: { contains: query.q, mode: "insensitive" } },
+        { genericName: { contains: query.q, mode: "insensitive" } },
+        { medicineCode: { contains: query.q, mode: "insensitive" } },
+      ],
+    },
+    include: {
+      batches: {
+        where: {
+          status: "ACTIVE",
+          expiryDate: { gte: new Date() },
+          availableQuantity: { gt: 0 },
+          ...(query.branchId ? { branchId: query.branchId } : {}),
+        },
+        orderBy: [{ expiryDate: "asc" }, { createdAt: "asc" }],
+      },
+    },
+    orderBy: { brandName: "asc" }, take: 30,
+  });
+
+  return medicines.map((medicine) => ({
+    id: medicine.id,
+    medicineCode: medicine.medicineCode,
+    brandName: medicine.brandName,
+    genericName: medicine.genericName,
+    strength: medicine.strength,
+    dosageForm: medicine.dosageForm,
+    manufacturer: medicine.manufacturer,
+    sellingPrice: medicine.sellingPrice,
+    totalAvailable: medicine.batches.reduce((t,b)=>t+Number(b.availableQuantity),0),
+    batches: medicine.batches.map((batch)=>({
+      id: batch.id, batchNumber: batch.batchNumber, expiryDate: batch.expiryDate,
+      availableQuantity: batch.availableQuantity, sellingPrice: batch.sellingPrice,
+      rackLocation: batch.rackLocation,
+    })),
+  }));
+}
+
 export async function createPrescription(
   hospitalId: string,
   visitId: string,
@@ -333,59 +378,52 @@ export async function createPrescription(
   input: {
     notes?: string | null;
     items: Array<{
+      medicineId: string;
       medicineName: string;
       dosage?: string | null;
       frequency?: string | null;
       durationDays?: number | null;
+      prescribedQuantity?: number | null;
       instructions?: string | null;
     }>;
   },
 ) {
   await requireVisit(hospitalId, visitId);
+  const medicineIds = [...new Set(input.items.map((item) => item.medicineId))];
+  const medicines = await prisma.pharmacyMedicine.findMany({
+    where: { hospitalId, id: { in: medicineIds }, deletedAt: null, status: "ACTIVE" },
+    select: { id: true, brandName: true, strength: true },
+  });
+  if (medicines.length !== medicineIds.length) {
+    throw new AppError("One or more selected medicines are not available in the medicine master",400,"OPD_MEDICINE_INVALID");
+  }
+  const medicineMap = new Map(medicines.map((medicine)=>[medicine.id,medicine]));
 
-  const itemData: Prisma.OpdPrescriptionItemCreateWithoutPrescriptionInput[] =
-    input.items.map((item) => {
-      const data: Prisma.OpdPrescriptionItemCreateWithoutPrescriptionInput = {
-        hospitalId,
-        medicineName: item.medicineName,
-        createdBy: userId,
-      };
-
-      if (item.dosage !== undefined) {
-        data.dosage = item.dosage;
-      }
-
-      if (item.frequency !== undefined) {
-        data.frequency = item.frequency;
-      }
-
-      if (item.durationDays !== undefined) {
-        data.durationDays = item.durationDays;
-      }
-
-      if (item.instructions !== undefined) {
-        data.instructions = item.instructions;
-      }
-
-      return data;
+  return prisma.$transaction(async (transaction) => {
+    const prescription = await transaction.opdPrescription.upsert({
+      where: { visitId },
+      create: { hospitalId, visitId, createdBy: userId, updatedBy: userId, ...(input.notes!==undefined?{notes:input.notes}:{}) },
+      update: { updatedBy: userId, ...(input.notes!==undefined?{notes:input.notes}:{}) },
     });
-
-  return prisma.opdPrescription.create({
-    data: {
-      hospitalId,
-      visitId,
-      createdBy: userId,
-      updatedBy: userId,
-      ...(input.notes !== undefined
-        ? { notes: input.notes }
-        : {}),
-      items: {
-        create: itemData,
-      },
-    },
-    include: {
-      items: true,
-    },
+    for (const item of input.items) {
+      const medicine = medicineMap.get(item.medicineId)!;
+      await transaction.opdPrescriptionItem.create({
+        data: {
+          hospitalId, prescriptionId: prescription.id, medicineId: item.medicineId,
+          medicineName: [medicine.brandName,medicine.strength].filter(Boolean).join(" "),
+          createdBy: userId,
+          ...(item.dosage!==undefined?{dosage:item.dosage}:{}),
+          ...(item.frequency!==undefined?{frequency:item.frequency}:{}),
+          ...(item.durationDays!==undefined?{durationDays:item.durationDays}:{}),
+          ...(item.prescribedQuantity!==undefined?{prescribedQuantity:item.prescribedQuantity}:{}),
+          ...(item.instructions!==undefined?{instructions:item.instructions}:{}),
+        },
+      });
+    }
+    return transaction.opdPrescription.findUnique({
+      where:{id:prescription.id},
+      include:{items:{include:{medicine:true},orderBy:{createdAt:"asc"}}},
+    });
   });
 }
 

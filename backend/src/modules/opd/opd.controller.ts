@@ -77,6 +77,16 @@ export async function addDiagnosisController(req: Request, res: Response, next: 
   } catch (error) { next(error); }
 }
 
+export async function searchPrescriptionMedicinesController(req: Request,res: Response,next: NextFunction) {
+  try {
+    const query = schema.medicineSearchSchema.parse(req.query);
+    const result = await service.searchPrescriptionMedicines(req.auth!.hospitalId,{
+      q: query.q, ...(query.branchId!==undefined?{branchId:query.branchId}:{}),
+    });
+    res.json(successResponse(result,"Prescription medicines retrieved successfully",req.requestId));
+  } catch (error) { next(error); }
+}
+
 export async function createPrescriptionController(
   req: Request,
   res: Response,
@@ -87,6 +97,7 @@ export async function createPrescriptionController(
     const input = schema.prescriptionSchema.parse(req.body);
 
     const items = input.items.map((item) => ({
+      medicineId: item.medicineId,
       medicineName: item.medicineName,
 
       ...(item.dosage !== undefined
@@ -99,6 +110,10 @@ export async function createPrescriptionController(
 
       ...(item.durationDays !== undefined
         ? { durationDays: item.durationDays }
+        : {}),
+
+      ...(item.prescribedQuantity !== undefined
+        ? { prescribedQuantity: item.prescribedQuantity }
         : {}),
 
       ...(item.instructions !== undefined

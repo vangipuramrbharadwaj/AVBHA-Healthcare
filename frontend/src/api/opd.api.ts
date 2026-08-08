@@ -23,3 +23,12 @@ export async function createOpdPrescription(id:string,input:Record<string,unknow
 export async function addOpdOrder(id:string,input:Record<string,unknown>){return unwrap<any>(await apiRequest<unknown>(`/opd/${id}/orders`,{method:"POST",body:input}));}
 export async function addOpdFollowUp(id:string,input:Record<string,unknown>){return unwrap<any>(await apiRequest<unknown>(`/opd/${id}/follow-ups`,{method:"POST",body:input}));}
 export async function completeOpdVisit(id:string){return unwrap<any>(await apiRequest<unknown>(`/opd/${id}/complete`,{method:"POST"}));}
+
+export type PrescriptionMedicineSearchResult = {
+  id:string; medicineCode:string; brandName:string; genericName?:string|null; strength?:string|null;
+  dosageForm?:string|null; manufacturer?:string|null; sellingPrice?:string|number|null; totalAvailable:number;
+  batches:Array<{id:string;batchNumber:string;expiryDate:string;availableQuantity:string|number;sellingPrice:string|number;rackLocation?:string|null}>;
+};
+export async function searchPrescriptionMedicines(q:string,branchId?:string){
+  return unwrap<PrescriptionMedicineSearchResult[]>(await apiRequest<unknown>(`/opd/medicine-search${qs({q,branchId})}`));
+}

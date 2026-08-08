@@ -62,10 +62,12 @@ export const diagnosisSchema = z.object({
 export const prescriptionSchema = z.object({
   notes: z.string().trim().max(3000).optional().nullable(),
   items: z.array(z.object({
+    medicineId: z.string().uuid(),
     medicineName: z.string().trim().min(2).max(200),
     dosage: z.string().trim().max(100).optional().nullable(),
     frequency: z.string().trim().max(100).optional().nullable(),
     durationDays: z.coerce.number().int().min(1).max(3650).optional().nullable(),
+    prescribedQuantity: z.coerce.number().positive().optional().nullable(),
     instructions: z.string().trim().max(2000).optional().nullable(),
   })).min(1),
 });
@@ -82,3 +84,5 @@ export const followUpSchema = z.object({
   reason: z.string().trim().max(3000).optional().nullable(),
   notes: z.string().trim().max(3000).optional().nullable(),
 });
+
+export const medicineSearchSchema = z.object({ q: z.string().trim().min(1).max(100), branchId: z.string().uuid().optional() });

@@ -13,6 +13,7 @@ import {
   getVisitController,
   listVisitsController,
   saveConsultationController,
+  searchPrescriptionMedicinesController,
 } from "./opd.controller";
 import { OPD_PERMISSIONS } from "./opd.permissions";
 
@@ -21,6 +22,7 @@ opdRouter.use(authenticate, enforceTenant);
 
 opdRouter.get("/", requirePermission(OPD_PERMISSIONS.VIEW), listVisitsController);
 opdRouter.post("/", requirePermission(OPD_PERMISSIONS.CREATE), createVisitController);
+opdRouter.get("/medicine-search", requirePermission(OPD_PERMISSIONS.VIEW), searchPrescriptionMedicinesController);
 opdRouter.get("/:id", requirePermission(OPD_PERMISSIONS.VIEW), getVisitController);
 opdRouter.post("/:id/vitals", requirePermission(OPD_PERMISSIONS.UPDATE), addVitalsController);
 opdRouter.put("/:id/consultation", requirePermission(OPD_PERMISSIONS.CONSULTATION_UPDATE), saveConsultationController);

@@ -1,0 +1,12 @@
+import { apiRequest } from "./http";
+export const inventoryDashboard=()=>apiRequest<any>("/inventory/dashboard");
+export const listCategories=()=>apiRequest<any>("/inventory/categories?page=1&pageSize=100");
+export const createCategory=(body:any)=>apiRequest<any>("/inventory/categories",{method:"POST",body});
+export const listItems=()=>apiRequest<any>("/inventory/items?page=1&pageSize=100");
+export const createItem=(body:any)=>apiRequest<any>("/inventory/items",{method:"POST",body});
+export const listStores=()=>apiRequest<any[]>("/inventory/stores");
+export const createStore=(body:any)=>apiRequest<any>("/inventory/stores",{method:"POST",body});
+export const listSuppliers=()=>apiRequest<any[]>("/inventory/suppliers");
+export const createSupplier=(body:any)=>apiRequest<any>("/inventory/suppliers",{method:"POST",body});
+export const listStock=(storeId?:string)=>apiRequest<any[]>(`/inventory/stock${storeId?`?storeId=${storeId}`:""}`);
+export const adjustStock=(body:any)=>apiRequest<any>("/inventory/stock/adjustments",{method:"POST",body});

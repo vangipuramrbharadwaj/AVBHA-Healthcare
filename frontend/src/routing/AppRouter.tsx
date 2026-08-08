@@ -16,6 +16,8 @@ import ReceptionOpdPage from "../pages/ReceptionOpdPage";
 import AppointmentsPage from "../pages/AppointmentsPage";
 import DoctorsPage from "../pages/DoctorsPage";
 import OpdPage from "../pages/OpdPage";
+import PharmacyPage from "../pages/PharmacyPage";
+import InventoryPage from "../pages/InventoryPage";
 
 const modulePage=(permission:string,title:string,description:string)=><PermissionRoute permission={permission}><ModulePlaceholderPage title={title} description={description}/></PermissionRoute>;
 
@@ -39,8 +41,8 @@ export function AppRouter(){
             <Route path="ipd/*" element={modulePage("ipd.view","IPD","Admissions, beds, nursing, rounds and inpatient management.")}/>
             <Route path="laboratory/*" element={modulePage("laboratory.view","Laboratory","Lab catalog, orders, samples, results and verification.")}/>
             <Route path="radiology/*" element={modulePage("radiology.view","Radiology","Imaging orders, studies, contrast administration and reports.")}/>
-            <Route path="pharmacy/*" element={modulePage("pharmacy.view","Pharmacy","Medicines, batches, purchasing, dispensing and pharmacy sales.")}/>
-            <Route path="inventory/*" element={modulePage("inventory.view","Inventory","Central stores, stock, materials, purchases and transfers.")}/>
+            <Route path="pharmacy/*" element={<PermissionRoute permission="pharmacy.view"><PharmacyPage /></PermissionRoute>}/>
+            <Route path="inventory/*" element={<PermissionRoute permission="inventory.view"><InventoryPage /></PermissionRoute>}/>
             <Route path="billing/*" element={modulePage("billing.view","Billing & Payments","Invoices, payments, advances, refunds and patient ledger.")}/>
             <Route path="operation-theatre/*" element={modulePage("operation_theatre.view","Operation Theatre","OT rooms, bookings, theatre workflow and recovery.")}/>
             <Route path="reports/*" element={modulePage("reports.view","Reports & MIS","Operational reports, analytics and management information.")}/>
