@@ -10,10 +10,22 @@
 .doctor-toolbar input,.doctor-toolbar button,.doctor-modal input,.doctor-modal select{box-sizing:border-box;min-height:46px;border:1px solid #cbd9ea;border-radius:10px;padding:11px 14px;font:inherit;background:#fff}
 .doctor-toolbar button{font-weight:700;cursor:pointer}
 .doctor-card{background:#fff;border:1px solid #d9e3f0;border-radius:18px;overflow:hidden}
-.doctor-card table{width:100%;border-collapse:collapse}
+.doctor-table-scroll{width:100%;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-gutter:stable}
+.doctor-table-scroll::-webkit-scrollbar{height:12px}
+.doctor-table-scroll::-webkit-scrollbar-track{background:#eef3f9;border-radius:999px}
+.doctor-table-scroll::-webkit-scrollbar-thumb{background:#a9bdd6;border:3px solid #eef3f9;border-radius:999px}
+.doctor-card table{width:100%;min-width:1450px;border-collapse:collapse}
 .doctor-card th,.doctor-card td{text-align:left;padding:17px 18px;border-bottom:1px solid #e8eef6}
 .doctor-card th{font-size:12px;letter-spacing:1px;color:#64758e}
 .doctor-card small{display:block;color:#7486a0;margin-top:5px}
+.doctor-card th:last-child,.doctor-card td:last-child{position:sticky;right:0;z-index:2;background:#fff;box-shadow:-10px 0 18px -18px #10233f}
+.doctor-card th:last-child{z-index:3;background:#fff}
+.doctor-availability-cell{min-width:270px;max-width:340px}
+.doctor-availability-summary{display:flex;flex-direction:column;gap:6px}
+.doctor-availability-day{display:grid;grid-template-columns:36px 1fr;gap:7px;align-items:start;font-size:11px;line-height:1.35}
+.doctor-availability-day strong{display:inline-flex;justify-content:center;background:#eaf3ff;color:#075dbd;border-radius:7px;padding:4px 5px;font-size:10px;letter-spacing:.3px}
+.doctor-availability-day span{color:#405673;padding-top:3px;white-space:normal}
+.doctor-availability-none{display:inline-flex;align-items:center;border-radius:999px;background:#fff3e5;color:#9b5a00;font-size:11px;font-weight:800;padding:6px 9px;white-space:nowrap}
 .doctor-status{font-size:11px;font-weight:800;background:#edf1f5;padding:6px 9px;border-radius:999px}
 .doctor-status.active{background:#e5f7ed;color:#137a42}
 .doctor-link{border:0;background:none;color:#0965d7;font-weight:800;cursor:pointer}
@@ -68,10 +80,24 @@
   .doctor-grid{grid-template-columns:1fr}
   .doctor-grid .span2{grid-column:auto}
   .doctor-source-switch{grid-template-columns:1fr}
-  .doctor-card{overflow:auto}
-  .doctor-card table{min-width:1050px}
   .availability-title{align-items:flex-start;flex-direction:column}
   .doctor-availability-row{grid-template-columns:1fr}
   .doctor-modal{padding:18px}
   .doctor-modal-head{margin:-18px -18px 20px;padding:18px}
 }
+
+
+/* Compact Doctor Management listing */
+.doctor-card th,.doctor-card td{padding:12px 14px}
+.doctor-card th{font-size:11px;letter-spacing:.8px}
+.doctor-card td{font-size:13px;line-height:1.3}
+.doctor-card td strong{font-size:13px}
+.doctor-card small{font-size:11px;margin-top:3px}
+.doctor-card .doctor-status{font-size:10px;padding:5px 8px}
+.doctor-card .doctor-link{font-size:13px}
+.doctor-card .doctor-availability-cell{min-width:250px;max-width:310px}
+.doctor-card .doctor-availability-summary{gap:4px}
+.doctor-card .doctor-availability-day{grid-template-columns:34px 1fr;gap:6px;font-size:11px;line-height:1.25}
+.doctor-card .doctor-availability-day strong{font-size:10px;padding:3px 5px}
+.doctor-card .doctor-availability-day span{font-size:11px;padding-top:2px}
+.doctor-card .doctor-availability-none{font-size:10px;padding:5px 8px}

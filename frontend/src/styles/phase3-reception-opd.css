@@ -982,3 +982,65 @@
     flex-basis: 36px;
   }
 }
+
+
+/* Reception live clinical journey */
+.p3-mini-journey {
+  min-width: 150px;
+  display: grid;
+  gap: 7px;
+}
+
+.p3-mini-journey-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+}
+
+.p3-mini-journey-top strong {
+  color: #203a58;
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.p3-mini-journey-top span {
+  color: #718198;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.p3-mini-track {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+}
+
+.p3-mini-track span {
+  height: 5px;
+  border-radius: 999px;
+  background: #e1e8f1;
+}
+
+.p3-mini-track span.done {
+  background: #20a060;
+}
+
+.p3-mini-track span.current {
+  background: #1267ca;
+  box-shadow: 0 0 0 2px rgba(18, 103, 202, .10);
+}
+
+.p3-stage-cell {
+  min-width: 175px;
+}
+
+.p3-queue-action .p3-mini-journey {
+  margin-bottom: 2px;
+}
+
+@media(max-width:760px) {
+  .p3-mini-journey {
+    min-width: 130px;
+  }
+}

@@ -96,6 +96,50 @@ function scheduleToAvailability(
   };
 }
 
+
+function formatScheduleTime(value: string) {
+  const [hoursText = "0", minutesText = "00"] = value.split(":");
+  const hours = Number(hoursText);
+  const suffix = hours >= 12 ? "PM" : "AM";
+  const displayHours = hours % 12 || 12;
+  return `${String(displayHours).padStart(2, "0")}:${minutesText} ${suffix}`;
+}
+
+function availabilitySummary(schedules: DoctorSchedule[]) {
+  if (!schedules.length) {
+    return <span className="doctor-availability-none">Not configured</span>;
+  }
+
+  const grouped = schedules.reduce<Record<number, DoctorSchedule[]>>(
+    (result, schedule) => {
+      (result[schedule.dayOfWeek] ??= []).push(schedule);
+      return result;
+    },
+    {},
+  );
+
+  return (
+    <div className="doctor-availability-summary">
+      {DAY_OPTIONS.filter((day) => grouped[day.value]?.length).map((day) => (
+        <div className="doctor-availability-day" key={day.value}>
+          <strong>{day.label.slice(0, 3)}</strong>
+          <span>
+            {(grouped[day.value] ?? [])
+              .sort((a, b) => a.startTime.localeCompare(b.startTime))
+              .map(
+                (schedule) =>
+                  `${formatScheduleTime(schedule.startTime)} – ${formatScheduleTime(
+                    schedule.endTime,
+                  )}`,
+              )
+              .join(", ")}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function DoctorsPage() {
   const [doctors, setDoctors] = useState<DoctorRecord[]>([]);
   const [employees, setEmployees] = useState<EmployeeOption[]>([]);
@@ -113,6 +157,7 @@ export default function DoctorsPage() {
   );
 
   const [availability, setAvailability] = useState<AvailabilityRow[]>([]);
+  const [doctorSchedules, setDoctorSchedules] = useState<Record<string, DoctorSchedule[]>>({});
 
   const [form, setForm] = useState({
     employeeId: "",
@@ -157,6 +202,18 @@ export default function DoctorsPage() {
       setEmployees(employeeResult.items);
       setDepartments(departmentResult.items);
       setBranches(branchResult.items);
+
+      const scheduleResults = await Promise.all(
+        doctorResult.items.map(async (doctor) => {
+          try {
+            const schedules = await listDoctorSchedules(doctor.id);
+            return [doctor.id, schedules] as const;
+          } catch {
+            return [doctor.id, []] as const;
+          }
+        }),
+      );
+      setDoctorSchedules(Object.fromEntries(scheduleResults));
     } catch (value) {
       setError(
         value instanceof Error
@@ -452,7 +509,8 @@ export default function DoctorsPage() {
       {success ? <div className="doctor-success">{success}</div> : null}
 
       <section className="doctor-card">
-        <table>
+        <div className="doctor-table-scroll">
+          <table>
           <thead>
             <tr>
               <th>Doctor</th>
@@ -462,6 +520,7 @@ export default function DoctorsPage() {
               <th>Specialization</th>
               <th>Mobile</th>
               <th>Slot</th>
+              <th>Availability</th>
               <th>Status</th>
               <th />
             </tr>
@@ -482,6 +541,9 @@ export default function DoctorsPage() {
                 <td>{doctorMobile(doctor)}</td>
                 <td>
                   {doctor.averageConsultationMinutes ?? 15} min
+                </td>
+                <td className="doctor-availability-cell">
+                  {availabilitySummary(doctorSchedules[doctor.id] ?? [])}
                 </td>
                 <td>
                   <span
@@ -504,13 +566,14 @@ export default function DoctorsPage() {
             ))}
             {!doctors.length ? (
               <tr>
-                <td colSpan={9} className="doctor-empty">
+                <td colSpan={10} className="doctor-empty">
                   No doctors created yet.
                 </td>
               </tr>
             ) : null}
           </tbody>
-        </table>
+          </table>
+        </div>
       </section>
 
       {open ? (

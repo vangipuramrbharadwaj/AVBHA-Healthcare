@@ -197,7 +197,7 @@ export async function addVitals(
   userId: string,
   input: Record<string, unknown>,
 ) {
-  await requireVisit(hospitalId, visitId);
+  const visit = await requireVisit(hospitalId, visitId);
 
   const height =
     typeof input.heightCm === "number"
@@ -209,23 +209,40 @@ export async function addVitals(
       ? input.weightKg
       : null;
 
-  return prisma.opdVitalSign.create({
-    data: clean({
-      hospitalId,
-      visitId,
-      recordedBy: userId,
-      ...input,
-      ...(height && weight
-        ? {
-            bmi: Number(
-              (
-                weight /
-                ((height / 100) ** 2)
-              ).toFixed(2),
-            ),
-          }
-        : {}),
-    }) as unknown as Prisma.OpdVitalSignUncheckedCreateInput,
+  return prisma.$transaction(async (transaction) => {
+    const vital = await transaction.opdVitalSign.create({
+      data: clean({
+        hospitalId,
+        visitId,
+        recordedBy: userId,
+        ...input,
+        ...(height && weight
+          ? {
+              bmi: Number(
+                (
+                  weight /
+                  ((height / 100) ** 2)
+                ).toFixed(2),
+              ),
+            }
+          : {}),
+      }) as unknown as Prisma.OpdVitalSignUncheckedCreateInput,
+    });
+
+    // REGISTERED means the patient has checked in but pre-consultation is pending.
+    // Once vitals are captured, WAITING means "Ready for Doctor".
+    // Retaking vitals must never move an active/completed consultation backwards.
+    if (visit.status === OpdVisitStatus.REGISTERED) {
+      await transaction.opdVisit.update({
+        where: { id: visitId },
+        data: {
+          status: OpdVisitStatus.WAITING,
+          updatedBy: userId,
+        },
+      });
+    }
+
+    return vital;
   });
 }
 

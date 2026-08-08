@@ -1,1 +1,466 @@
 .opd-page{display:flex;flex-direction:column;gap:22px;color:#10233f}.opd-hero{background:linear-gradient(120deg,#103b86,#0868d7);color:#fff;border-radius:28px;padding:28px 34px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 18px 45px rgba(15,59,134,.16)}.opd-hero span{font-size:12px;font-weight:800;letter-spacing:.18em}.opd-hero h1{font-size:42px;margin:5px 0}.opd-hero p{margin:0;opacity:.9}.opd-hero>strong{font-size:34px;text-align:center}.opd-hero>strong small{display:block;font-size:12px}.opd-message{padding:13px 17px;border:1px solid #b9d5ff;background:#eef6ff;border-radius:13px;font-weight:700}.opd-layout{display:grid;grid-template-columns:320px minmax(0,1fr);gap:20px}.opd-queue,.opd-work{background:#fff;border:1px solid #dce7f5;border-radius:23px;box-shadow:0 12px 32px rgba(19,55,96,.06)}.opd-queue{padding:19px;align-self:start}.opd-head{display:flex;justify-content:space-between;align-items:center}.opd-head span{font-size:11px;color:#1765c1;font-weight:800;letter-spacing:.14em}.opd-head h2{margin:3px 0 12px}.opd-head button,.opd-panel button,.opd-actions button{border:0;border-radius:12px;background:#1163c7;color:#fff;font-weight:800;padding:11px 15px;cursor:pointer}.opd-queue>input{width:100%;box-sizing:border-box;border:1px solid #cbd9ec;border-radius:12px;padding:12px;margin-bottom:12px}.opd-list{display:flex;flex-direction:column;gap:8px;max-height:650px;overflow:auto}.opd-list>button{text-align:left;border:1px solid #e0e9f4;background:#fff;border-radius:14px;padding:12px;cursor:pointer;color:#10233f}.opd-list>button.active{border-color:#2474d7;background:#eef6ff}.opd-list span,.opd-list small{display:block;color:#667892;font-size:12px;margin-top:4px}.opd-work{padding:21px;min-height:640px}.opd-patient{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;gap:15px;align-items:center;background:#f5f9ff;border:1px solid #d9e7f7;border-radius:17px;padding:17px}.opd-avatar{width:52px;height:52px;border-radius:15px;background:#dcecff;color:#0c5dbc;display:grid;place-items:center;font-size:23px;font-weight:900}.opd-patient span{font-size:11px;color:#657894;text-transform:uppercase;font-weight:800}.opd-patient h2{margin:3px 0}.opd-patient p,.opd-patient small{margin:0;color:#64758e}.opd-patient strong,.opd-patient small{display:block}.opd-patient>b{background:#dff6e8;color:#167944;padding:8px 11px;border-radius:999px;font-size:11px}.opd-tabs{display:flex;gap:7px;overflow:auto;padding:17px 0}.opd-tabs button{white-space:nowrap;border:1px solid #d3e0f0;background:#fff;color:#536985;padding:9px 12px;border-radius:10px;font-weight:800;cursor:pointer}.opd-tabs button.active{background:#1264c8;color:#fff}.opd-panel{border:1px solid #dce7f4;border-radius:17px;padding:21px}.opd-panel h3{margin-top:0;font-size:22px}.opd-info,.opd-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}.opd-info>div{background:#f7faff;border:1px solid #e0e9f5;border-radius:13px;padding:14px}.opd-info span,.opd-panel label>span{display:block;color:#687b96;font-size:12px;font-weight:800;margin-bottom:6px}.opd-panel label{display:block;margin-bottom:13px}.opd-panel input,.opd-panel select,.opd-panel textarea{width:100%;box-sizing:border-box;border:1px solid #cbd9ea;border-radius:11px;padding:11px;font:inherit;color:#10233f;background:#fff}.opd-panel textarea{min-height:88px}.opd-form .wide{grid-column:1/-1}.check{display:flex!important;align-items:center;gap:8px}.check input{width:auto}.opd-actions{display:flex;gap:9px;margin-top:18px;flex-wrap:wrap}.opd-actions .secondary{background:#fff;color:#1264c8;border:1px solid #b8d3f4}.opd-records{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:16px}.opd-records span{background:#eef5ff;border:1px solid #d5e5fa;border-radius:999px;padding:7px 10px;font-size:12px;font-weight:700}.opd-empty{padding:150px 20px;text-align:center;color:#72839a}@media(max-width:1000px){.opd-layout{grid-template-columns:1fr}.opd-list{max-height:260px}.opd-patient{grid-template-columns:auto 1fr}}@media(max-width:650px){.opd-hero{padding:21px}.opd-hero>strong{display:none}.opd-work{padding:13px}.opd-info,.opd-form{grid-template-columns:1fr}.opd-form .wide{grid-column:auto}.opd-patient{grid-template-columns:1fr}.opd-avatar{display:none}}
+
+
+/* OPD vital history and latest-record presentation */
+.opd-vital-section-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: flex-start;
+  margin-bottom: 18px;
+}
+
+.opd-vital-section-head h3 {
+  margin-bottom: 5px;
+}
+
+.opd-vital-section-head p {
+  margin: 0;
+  color: #708198;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.opd-vital-latest-badge {
+  flex: 0 0 auto;
+  padding: 7px 11px;
+  border-radius: 999px;
+  background: #e2f6e9;
+  color: #14763e;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .08em;
+}
+
+.opd-vital-history {
+  margin-bottom: 20px;
+  padding: 14px;
+  border: 1px solid #dbe8f7;
+  border-radius: 15px;
+  background: #f7faff;
+}
+
+.opd-vital-history-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  margin-bottom: 11px;
+}
+
+.opd-vital-history-head strong {
+  font-size: 12px;
+  color: #193756;
+}
+
+.opd-vital-history-head span {
+  color: #76879d;
+  font-size: 10px;
+}
+
+.opd-vital-history-list {
+  display: flex;
+  gap: 9px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: thin;
+}
+
+.opd-vital-history-list button {
+  min-width: 165px;
+  padding: 11px 12px;
+  border: 1px solid #cbdcf0;
+  border-radius: 12px;
+  background: #fff;
+  color: #174e90;
+  text-align: left;
+  cursor: pointer;
+}
+
+.opd-vital-history-list button:hover {
+  border-color: #75a9e8;
+  background: #eef6ff;
+}
+
+.opd-vital-history-list button span,
+.opd-vital-history-list button small {
+  display: block;
+}
+
+.opd-vital-history-list button span {
+  color: #173451;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.opd-vital-history-list button small {
+  margin-top: 4px;
+  color: #1670cf;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.opd-vital-save-row {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 14px;
+}
+
+.opd-vital-save-row > span {
+  margin-right: auto;
+  color: #708198;
+  font-size: 10px;
+}
+
+.opd-vital-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: grid;
+  place-items: center;
+  padding: 22px;
+  background: rgba(8, 25, 48, .58);
+  backdrop-filter: blur(4px);
+}
+
+.opd-vital-modal {
+  width: min(720px, 100%);
+  max-height: calc(100vh - 44px);
+  overflow: auto;
+  border-radius: 22px;
+  background: #fff;
+  box-shadow: 0 30px 80px rgba(8, 25, 48, .28);
+}
+
+.opd-vital-modal-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: center;
+  padding: 22px 24px;
+  border-bottom: 1px solid #e3ebf5;
+}
+
+.opd-vital-modal-head span {
+  color: #1264c8;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .12em;
+}
+
+.opd-vital-modal-head h3 {
+  margin: 5px 0 0;
+  color: #142942;
+}
+
+.opd-vital-modal-head button {
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 12px;
+  background: #f1f5fa;
+  color: #344a64;
+  font-size: 26px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.opd-vital-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  padding: 22px 24px;
+}
+
+.opd-vital-detail-grid > div {
+  min-height: 75px;
+}
+
+.opd-vital-notes {
+  margin: 0 24px 24px;
+  padding: 14px;
+  border-radius: 13px;
+  background: #f7faff;
+  border: 1px solid #e0e9f5;
+}
+
+.opd-vital-notes span {
+  color: #687b96;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.opd-vital-notes p {
+  margin: 6px 0 0;
+  color: #243a54;
+  line-height: 1.55;
+}
+
+@media (max-width: 650px) {
+  .opd-vital-section-head,
+  .opd-vital-history-head,
+  .opd-vital-save-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .opd-vital-latest-badge {
+    align-self: flex-start;
+  }
+
+  .opd-vital-detail-grid {
+    grid-template-columns: 1fr 1fr;
+    padding: 16px;
+  }
+
+  .opd-vital-modal-head {
+    padding: 16px;
+  }
+
+  .opd-vital-notes {
+    margin: 0 16px 16px;
+  }
+}
+
+
+/* Modern OPD clinical journey */
+.opd-journey {
+  margin: 16px 0 2px;
+  padding: 17px 18px 15px;
+  border: 1px solid #d7e5f6;
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 92% 0%, rgba(39, 123, 228, .10), transparent 30%),
+    linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
+}
+
+.opd-journey-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.opd-journey-head > div {
+  display: grid;
+  gap: 3px;
+}
+
+.opd-journey-head > div > span,
+.opd-panel-title span,
+.opd-consult-head > div > span {
+  color: #1765c1;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .14em;
+}
+
+.opd-journey-head strong {
+  font-size: 16px;
+  color: #152c49;
+}
+
+.opd-live-stage {
+  padding: 7px 11px;
+  border-radius: 999px;
+  background: #e8f2ff;
+  color: #0d61bd;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: .08em;
+}
+
+.opd-journey-track {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  position: relative;
+}
+
+.opd-journey-track::before {
+  content: "";
+  position: absolute;
+  top: 16px;
+  left: 9%;
+  right: 9%;
+  height: 3px;
+  border-radius: 99px;
+  background: #dce5f0;
+}
+
+.opd-journey-step {
+  z-index: 1;
+  display: grid;
+  justify-items: center;
+  gap: 7px;
+  text-align: center;
+}
+
+.opd-step-marker {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border: 3px solid #e0e8f2;
+  border-radius: 50%;
+  background: #fff;
+  color: #91a0b3;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.opd-journey-step.done .opd-step-marker {
+  border-color: #179a58;
+  background: #179a58;
+  color: #fff;
+}
+
+.opd-journey-step.current .opd-step-marker {
+  border-color: #1264c8;
+  background: #1264c8;
+  color: #fff;
+  box-shadow: 0 0 0 6px rgba(18, 100, 200, .10);
+}
+
+.opd-step-copy {
+  display: grid;
+  gap: 2px;
+}
+
+.opd-step-copy strong {
+  color: #213955;
+  font-size: 10px;
+}
+
+.opd-step-copy span {
+  color: #8492a5;
+  font-size: 8px;
+}
+
+.opd-queue-stage {
+  font-weight: 800;
+}
+
+.opd-patient > b.stage-registered,
+.opd-queue-stage.stage-registered {
+  background: #fff4dc;
+  color: #9a5a00;
+}
+
+.opd-patient > b.stage-waiting,
+.opd-queue-stage.stage-waiting {
+  background: #e9f4ff;
+  color: #0b63b9;
+}
+
+.opd-patient > b.stage-in_consultation,
+.opd-queue-stage.stage-in_consultation {
+  background: #eee8ff;
+  color: #6940b8;
+}
+
+.opd-patient > b.stage-completed,
+.opd-queue-stage.stage-completed {
+  background: #dff6e8;
+  color: #167944;
+}
+
+.opd-panel-title,
+.opd-consult-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.opd-panel-title h3,
+.opd-consult-head h3 {
+  margin: 4px 0 0;
+}
+
+.opd-panel-title > strong {
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: #edf5ff;
+  color: #0d5eb7;
+  font-size: 10px;
+}
+
+.opd-next-action {
+  margin-top: 16px;
+  padding: 13px 15px;
+  border: 1px solid #cfe1f7;
+  border-radius: 13px;
+  background: #f1f7ff;
+}
+
+.opd-next-action span {
+  display: block;
+  margin-bottom: 4px;
+  color: #1765c1;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: .12em;
+}
+
+.opd-next-action strong {
+  color: #294766;
+  font-size: 11px;
+}
+
+.opd-consult-head > label {
+  min-width: 190px;
+  margin: 0;
+}
+
+.opd-consult-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.opd-consult-footer span {
+  margin-right: auto;
+  color: #718299;
+  font-size: 10px;
+}
+
+@media(max-width:760px) {
+  .opd-journey-track {
+    grid-template-columns: 1fr;
+    gap: 9px;
+  }
+
+  .opd-journey-track::before {
+    top: 17px;
+    bottom: 17px;
+    left: 16px;
+    right: auto;
+    width: 3px;
+    height: auto;
+  }
+
+  .opd-journey-step {
+    grid-template-columns: 34px 1fr;
+    justify-items: start;
+    text-align: left;
+    align-items: center;
+  }
+
+  .opd-step-copy span {
+    font-size: 9px;
+  }
+
+  .opd-panel-title,
+  .opd-consult-head,
+  .opd-consult-footer {
+    flex-direction: column;
+  }
+
+  .opd-consult-head > label {
+    width: 100%;
+  }
+}

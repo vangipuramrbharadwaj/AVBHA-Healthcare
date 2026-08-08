@@ -80,6 +80,55 @@ function statusClass(status?: string): string {
   return "p3-status is-blue";
 }
 
+function receptionOpdStage(status?: string): {
+  label: string;
+  step: number;
+  tone: string;
+} {
+  switch (String(status ?? "").toUpperCase()) {
+    case "WAITING":
+      return { label: "Ready for Doctor", step: 3, tone: "ready" };
+    case "IN_CONSULTATION":
+      return { label: "With Doctor", step: 4, tone: "consulting" };
+    case "COMPLETED":
+      return { label: "Consultation Completed", step: 5, tone: "completed" };
+    case "CANCELLED":
+      return { label: "Cancelled", step: 0, tone: "cancelled" };
+    case "REGISTERED":
+    default:
+      return { label: "Awaiting Vitals", step: 2, tone: "vitals" };
+  }
+}
+
+function ReceptionJourney({ status }: { status?: string }) {
+  const stage = receptionOpdStage(status);
+  const labels = ["Checked In", "Vitals", "Ready", "Consulting", "Completed"];
+
+  return (
+    <div className="p3-mini-journey" title={stage.label}>
+      <div className="p3-mini-journey-top">
+        <strong>{stage.label}</strong>
+        <span>{stage.step > 0 ? `${stage.step}/5` : "—"}</span>
+      </div>
+      <div className="p3-mini-track">
+        {labels.map((label, index) => (
+          <span
+            key={label}
+            className={
+              stage.step > index + 1
+                ? "done"
+                : stage.step === index + 1
+                  ? "current"
+                  : ""
+            }
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+
 const EMPTY_DASHBOARD: AppointmentDashboard = {
   date: today(),
   total: 0,
@@ -481,6 +530,16 @@ if (onlyBranch) {
       ),
     [appointments],
   );
+
+  const visitByAppointmentId = useMemo(() => {
+    const map = new Map<string, OpdVisitSummary>();
+    visits.forEach((visit) => {
+      if (visit.appointmentId) {
+        map.set(visit.appointmentId, visit);
+      }
+    });
+    return map;
+  }, [visits]);
 
   async function finalizeAppointmentCheckIn(
     item: AppointmentSummary,
@@ -1182,7 +1241,10 @@ if (onlyBranch) {
                 No active appointments for this date.
               </div>
             ) : (
-              todaysActiveQueue.map((item, index) => (
+              todaysActiveQueue.map((item, index) => {
+                const linkedVisit = visitByAppointmentId.get(item.id);
+
+                return (
                 <article className="p3-queue-row" key={item.id}>
                   <div className="p3-token">
                     <span>#{index + 1}</span>
@@ -1200,9 +1262,13 @@ if (onlyBranch) {
                   </div>
 
                   <div className="p3-queue-action">
-                    <span className={statusClass(item.status)}>
-                      {item.status.replaceAll("_", " ")}
-                    </span>
+                    {linkedVisit ? (
+                      <ReceptionJourney status={linkedVisit.status} />
+                    ) : (
+                      <span className={statusClass(item.status)}>
+                        {item.status.replaceAll("_", " ")}
+                      </span>
+                    )}
                     {["BOOKED", "CONFIRMED"].includes(item.status) && (
                       <button
                         type="button"
@@ -1214,7 +1280,8 @@ if (onlyBranch) {
                     )}
                   </div>
                 </article>
-              ))
+                );
+              })
             )}
           </div>
         </article>
@@ -1263,10 +1330,8 @@ if (onlyBranch) {
                     <td>{nameOfDoctor(visit.doctor)}</td>
                     <td>{visit.visitType?.replaceAll("_", " ")}</td>
                     <td>{visit.chiefComplaint || "-"}</td>
-                    <td>
-                      <span className={statusClass(visit.status)}>
-                        {String(visit.status).replaceAll("_", " ")}
-                      </span>
+                    <td className="p3-stage-cell">
+                      <ReceptionJourney status={visit.status} />
                     </td>
                     <td>
                       {!["COMPLETED", "CANCELLED"].includes(
