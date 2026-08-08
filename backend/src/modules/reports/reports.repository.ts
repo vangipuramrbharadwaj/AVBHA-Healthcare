@@ -633,14 +633,17 @@ export async function doctorPerformance(
     },
   });
 
-  return doctors.map((doctor) => ({
-    doctorId: doctor.id,
-    doctorCode: doctor.doctorCode,
-    doctorName: [doctor.employee.firstName, doctor.employee.lastName].filter(Boolean).join(" "),
-    specialization: doctor.specialization,
-    appointments: appointments.find((x) => x.doctorId === doctor.id)?._count._all ?? 0,
-    opdVisits: opd.find((x) => x.doctorId === doctor.id)?._count._all ?? 0,
-  }));
+return doctors.map((doctor) => ({
+  doctorId: doctor.id,
+  doctorCode: doctor.doctorCode,
+  doctorName:
+    [doctor.employee?.firstName, doctor.employee?.lastName]
+      .filter(Boolean)
+      .join(" ") || doctor.doctorCode,
+  specialization: doctor.specialization,
+  appointments: appointments.find((x) => x.doctorId === doctor.id)?._count._all ?? 0,
+  opdVisits: opd.find((x) => x.doctorId === doctor.id)?._count._all ?? 0,
+}));
 }
 
 

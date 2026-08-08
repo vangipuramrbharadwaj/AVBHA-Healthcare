@@ -15,6 +15,7 @@ import { PermissionRoute } from "./PermissionRoute";
 import ReceptionOpdPage from "../pages/ReceptionOpdPage";
 import AppointmentsPage from "../pages/AppointmentsPage";
 import DoctorsPage from "../pages/DoctorsPage";
+import OpdPage from "../pages/OpdPage";
 
 const modulePage=(permission:string,title:string,description:string)=><PermissionRoute permission={permission}><ModulePlaceholderPage title={title} description={description}/></PermissionRoute>;
 
@@ -34,7 +35,7 @@ export function AppRouter(){
             <Route path="patients/:id" element={<PermissionRoute permission="patients.view"><PatientDetailPage/></PermissionRoute>}/>
             <Route path="patients/:id/edit" element={<PermissionRoute permission="patients.update"><PatientEditPage/></PermissionRoute>}/>
             <Route path="appointments/*" element={<PermissionRoute permission="appointments.view"><AppointmentsPage /></PermissionRoute>} />
-            <Route path="opd/*" element={modulePage("opd.view","OPD","Out-patient visits, vitals, consultation and clinical orders.")}/>
+            <Route path="opd/*" element={<PermissionRoute permission="opd.view"><OpdPage /></PermissionRoute>}/>
             <Route path="ipd/*" element={modulePage("ipd.view","IPD","Admissions, beds, nursing, rounds and inpatient management.")}/>
             <Route path="laboratory/*" element={modulePage("laboratory.view","Laboratory","Lab catalog, orders, samples, results and verification.")}/>
             <Route path="radiology/*" element={modulePage("radiology.view","Radiology","Imaging orders, studies, contrast administration and reports.")}/>

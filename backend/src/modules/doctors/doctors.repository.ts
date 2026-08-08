@@ -48,10 +48,23 @@ export async function listDoctors(
     ...(query.departmentId ? { departmentId: query.departmentId } : {}),
     ...(query.branchId
       ? {
-          employee: {
-            branchId: query.branchId,
-            deletedAt: null,
-          },
+          OR: [
+            {
+              employee: {
+                branchId: query.branchId,
+                deletedAt: null,
+              },
+            },
+            {
+              schedules: {
+                some: {
+                  branchId: query.branchId,
+                  deletedAt: null,
+                  status: "ACTIVE",
+                },
+              },
+            },
+          ],
         }
       : {}),
     ...(query.status ? { status: query.status } : {}),
@@ -67,6 +80,24 @@ export async function listDoctors(
             },
             {
               specialization: {
+                contains: query.search,
+                mode: "insensitive",
+              },
+            },
+            {
+              firstName: {
+                contains: query.search,
+                mode: "insensitive",
+              },
+            },
+            {
+              lastName: {
+                contains: query.search,
+                mode: "insensitive",
+              },
+            },
+            {
+              mobile: {
                 contains: query.search,
                 mode: "insensitive",
               },
@@ -97,10 +128,7 @@ export async function listDoctors(
       include: doctorInclude,
       skip: (query.page - 1) * query.pageSize,
       take: query.pageSize,
-      orderBy: [
-        { employee: { firstName: "asc" } },
-        { doctorCode: "asc" },
-      ],
+      orderBy: [{ doctorCode: "asc" }],
     }),
     prisma.doctor.count({ where }),
   ]);
@@ -124,6 +152,21 @@ export function findDoctor(hospitalId: string, id: string) {
       deletedAt: null,
     },
     include: doctorInclude,
+  });
+}
+
+export function findDepartment(
+  hospitalId: string,
+  departmentId: string,
+) {
+  return prisma.department.findFirst({
+    where: {
+      id: departmentId,
+      hospitalId,
+      deletedAt: null,
+      status: "ACTIVE",
+    },
+    select: { id: true },
   });
 }
 
@@ -151,34 +194,30 @@ export function findEmployeeForDoctor(
 export async function createDoctor(
   hospitalId: string,
   userId: string,
-  departmentId: string,
   input: CreateDoctorInput,
 ) {
   return prisma.$transaction(async (transaction) => {
     const doctor = await transaction.doctor.create({
       data: {
         hospitalId,
-        employeeId: input.employeeId,
-        departmentId,
+        employeeId: input.employeeId ?? null,
+        departmentId: input.departmentId,
+
+        title: input.title ?? null,
+        firstName: input.firstName ?? null,
+        middleName: input.middleName ?? null,
+        lastName: input.lastName ?? null,
+        mobile: input.mobile ?? null,
+        email: input.email ?? null,
+
         doctorCode: input.doctorCode,
         medicalRegistrationNumber: input.medicalRegistrationNumber,
-
-        ...(input.registrationCouncil !== undefined
-          ? { registrationCouncil: input.registrationCouncil }
-          : {}),
-
+        registrationCouncil: input.registrationCouncil ?? null,
         qualification: input.qualification,
         specialization: input.specialization,
         consultationFee: input.consultationFee,
-
-        ...(input.followupFee !== undefined
-          ? { followupFee: input.followupFee }
-          : {}),
-
-        ...(input.emergencyFee !== undefined
-          ? { emergencyFee: input.emergencyFee }
-          : {}),
-
+        followupFee: input.followupFee ?? null,
+        emergencyFee: input.emergencyFee ?? null,
         averageConsultationMinutes: input.averageConsultationMinutes,
         isVisitingConsultant: input.isVisitingConsultant,
         status: input.status,
@@ -220,6 +259,21 @@ export async function updateDoctor(
     const doctor = await transaction.doctor.update({
       where: { id },
       data: {
+        ...(input.departmentId !== undefined
+          ? { departmentId: input.departmentId }
+          : {}),
+        ...(input.title !== undefined ? { title: input.title } : {}),
+        ...(input.firstName !== undefined
+          ? { firstName: input.firstName }
+          : {}),
+        ...(input.middleName !== undefined
+          ? { middleName: input.middleName }
+          : {}),
+        ...(input.lastName !== undefined
+          ? { lastName: input.lastName }
+          : {}),
+        ...(input.mobile !== undefined ? { mobile: input.mobile } : {}),
+        ...(input.email !== undefined ? { email: input.email } : {}),
         ...(input.doctorCode !== undefined
           ? { doctorCode: input.doctorCode }
           : {}),

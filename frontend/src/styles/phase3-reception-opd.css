@@ -561,3 +561,424 @@
   font-weight: 800;
   letter-spacing: .13em;
 }
+
+
+/* Reception doctor availability overview */
+.p3-doctors-head { align-items: flex-start; }
+.p3-doctors-head p {
+  margin: 6px 0 0;
+  color: #738197;
+  font-size: 12px;
+}
+.p3-doctor-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  padding: 18px 20px 20px;
+}
+.p3-doctor-card {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid #dbe5f2;
+  border-radius: 17px;
+  background: linear-gradient(180deg, #fff 0%, #f8fbff 100%);
+  box-shadow: 0 6px 18px rgba(15, 34, 61, .05);
+}
+.p3-doctor-card-top {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 11px;
+  align-items: center;
+}
+.p3-doctor-avatar {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 13px;
+  background: #e8f2ff;
+  color: #0b56ad;
+  font-size: 17px;
+  font-weight: 800;
+}
+.p3-doctor-title {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+.p3-doctor-title strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+}
+.p3-doctor-title span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #6e7d92;
+  font-size: 10px;
+}
+.p3-doctor-state {
+  padding: 7px 9px;
+  border-radius: 999px;
+  white-space: nowrap;
+  font-size: 9px;
+  font-weight: 800;
+}
+.p3-doctor-state.is-available { background: #e8f8ee; color: #14743b; }
+.p3-doctor-state.is-full { background: #fff2e3; color: #9b5705; }
+.p3-doctor-hours {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+.p3-doctor-hours span {
+  padding: 7px 9px;
+  border-radius: 9px;
+  background: #eef5ff;
+  color: #174f96;
+  font-size: 10px;
+  font-weight: 800;
+}
+.p3-doctor-meta {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.p3-doctor-meta div {
+  padding: 9px;
+  border: 1px solid #e8edf4;
+  border-radius: 11px;
+  background: #fff;
+}
+.p3-doctor-meta span,
+.p3-doctor-meta strong { display: block; }
+.p3-doctor-meta span {
+  margin-bottom: 4px;
+  color: #7a8799;
+  font-size: 9px;
+}
+.p3-doctor-meta strong {
+  color: #18304f;
+  font-size: 11px;
+}
+.p3-doctor-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.p3-doctor-opd,
+.p3-doctor-appointments {
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  padding: 0 11px;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 800;
+  text-decoration: none;
+  cursor: pointer;
+}
+.p3-doctor-opd {
+  border: 0;
+  background: #0b56ad;
+  color: #fff;
+}
+.p3-doctor-appointments {
+  border: 1px solid #bdd4f1;
+  background: #fff;
+  color: #0b56ad;
+}
+@media (max-width: 1200px) {
+  .p3-doctor-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 720px) {
+  .p3-doctor-grid { grid-template-columns: 1fr; padding: 14px; }
+  .p3-doctor-card-top { grid-template-columns: auto minmax(0, 1fr); }
+  .p3-doctor-state { grid-column: 1 / -1; justify-self: start; }
+}
+
+
+/* OPD slot selection */
+.p3-field select:disabled {
+  background: #f3f6fa;
+  color: #8190a4;
+  cursor: not-allowed;
+}
+
+
+/* Appointment check-in availability resolution */
+.p3-checkin-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(8, 25, 48, .58);
+  backdrop-filter: blur(4px);
+}
+
+.p3-checkin-modal {
+  width: min(760px, 100%);
+  max-height: calc(100vh - 48px);
+  overflow: auto;
+  border-radius: 22px;
+  background: #fff;
+  box-shadow: 0 30px 80px rgba(8, 25, 48, .28);
+}
+
+.p3-checkin-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 22px;
+  padding: 24px 26px 20px;
+  border-bottom: 1px solid #e5edf7;
+}
+
+.p3-checkin-head span {
+  color: #0b63c9;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .12em;
+}
+
+.p3-checkin-head h2 {
+  margin: 7px 0 7px;
+  color: #142742;
+  font-size: 22px;
+}
+
+.p3-checkin-head p {
+  max-width: 610px;
+  margin: 0;
+  color: #6d7d93;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.p3-checkin-head > button {
+  width: 40px;
+  height: 40px;
+  flex: 0 0 auto;
+  border: 0;
+  border-radius: 12px;
+  background: #f1f5fa;
+  color: #35465d;
+  font-size: 27px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.p3-checkin-current {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  padding: 20px 26px 0;
+}
+
+.p3-checkin-current div {
+  padding: 13px;
+  border: 1px solid #e0e8f2;
+  border-radius: 13px;
+  background: #f8fbff;
+}
+
+.p3-checkin-current span,
+.p3-checkin-current strong {
+  display: block;
+}
+
+.p3-checkin-current span {
+  margin-bottom: 5px;
+  color: #7a899d;
+  font-size: 10px;
+}
+
+.p3-checkin-current strong {
+  color: #172b47;
+  font-size: 12px;
+}
+
+.p3-checkin-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  padding: 20px 26px;
+}
+
+.p3-checkin-note {
+  margin: 0 26px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #eef6ff;
+  color: #315f91;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.p3-checkin-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 20px 26px 26px;
+}
+
+.p3-checkin-actions button {
+  min-height: 42px;
+  border-radius: 11px;
+  padding: 0 16px;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.p3-checkin-secondary {
+  border: 1px solid #c8d8eb;
+  background: #fff;
+  color: #1459a7;
+}
+
+.p3-checkin-primary {
+  border: 0;
+  background: #0b63c9;
+  color: #fff;
+}
+
+.p3-checkin-primary:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+@media (max-width: 720px) {
+  .p3-checkin-overlay {
+    padding: 12px;
+  }
+
+  .p3-checkin-current,
+  .p3-checkin-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .p3-checkin-head,
+  .p3-checkin-current,
+  .p3-checkin-fields,
+  .p3-checkin-actions {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .p3-checkin-note {
+    margin-left: 16px;
+    margin-right: 16px;
+  }
+
+  .p3-checkin-actions {
+    display: grid;
+  }
+}
+
+
+/* Doctor availability single-row carousel */
+.p3-doctor-carousel-controls {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.p3-carousel-arrow {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid #bfd3ec;
+  border-radius: 12px;
+  background: #fff;
+  color: #0b56ad;
+  font: inherit;
+  font-size: 27px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(15, 34, 61, .05);
+  transition:
+    transform .16s ease,
+    background .16s ease,
+    border-color .16s ease;
+}
+
+.p3-carousel-arrow:hover {
+  background: #edf5ff;
+  border-color: #8eb8ea;
+  transform: translateY(-1px);
+}
+
+.p3-carousel-arrow:active {
+  transform: translateY(0);
+}
+
+.p3-doctor-grid.p3-doctor-carousel {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(330px, calc((100% - 28px) / 3));
+  grid-template-columns: none;
+  gap: 14px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-behavior: smooth;
+  scroll-snap-type: x mandatory;
+  overscroll-behavior-inline: contain;
+  padding: 18px 20px 22px;
+  scrollbar-width: none;
+}
+
+.p3-doctor-grid.p3-doctor-carousel::-webkit-scrollbar {
+  display: none;
+}
+
+.p3-doctor-carousel .p3-doctor-card {
+  width: 100%;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+
+@media (max-width: 1200px) {
+  .p3-doctor-grid.p3-doctor-carousel {
+    grid-template-columns: none;
+    grid-auto-columns: minmax(320px, calc((100% - 14px) / 2));
+  }
+}
+
+@media (max-width: 760px) {
+  .p3-doctors-head {
+    gap: 14px;
+  }
+
+  .p3-doctor-carousel-controls {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .p3-doctor-carousel-controls .p3-chip {
+    margin-right: auto;
+  }
+
+  .p3-doctor-grid.p3-doctor-carousel {
+    grid-template-columns: none;
+    grid-auto-columns: minmax(285px, 88%);
+    padding: 14px;
+  }
+
+  .p3-carousel-arrow {
+    width: 36px;
+    height: 36px;
+    flex-basis: 36px;
+  }
+}

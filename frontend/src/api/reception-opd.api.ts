@@ -17,6 +17,60 @@ type ApiEnvelope<T> = {
   message?: string;
 };
 
+export type ReceptionDoctor = {
+  id: string;
+  departmentId: string;
+  doctorCode: string;
+  specialization: string;
+  averageConsultationMinutes?: number | null;
+  status: string;
+  title?: string | null;
+  firstName?: string | null;
+  middleName?: string | null;
+  lastName?: string | null;
+  mobile?: string | null;
+  email?: string | null;
+  employee?: {
+    id: string;
+    firstName: string;
+    middleName?: string | null;
+    lastName?: string | null;
+    mobile?: string | null;
+  } | null;
+  department?: {
+    id: string;
+    departmentCode?: string;
+    departmentName: string;
+  } | null;
+};
+
+export type ReceptionDoctorSchedule = {
+  id: string;
+  branchId: string;
+  doctorId: string;
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+  slotDuration: number;
+  effectiveFrom: string;
+  effectiveTo?: string | null;
+  status: string;
+};
+
+export type ReceptionDoctorSlot = {
+  startTime: string;
+  endTime: string;
+  available: boolean;
+  reason: string | null;
+};
+
+export type ReceptionDoctorSlotsResult = {
+  doctorId: string;
+  branchId: string;
+  date: string;
+  slots: ReceptionDoctorSlot[];
+};
+
 function unwrap<T>(value: ApiEnvelope<T> | T): T {
   if (
     value &&
@@ -108,6 +162,38 @@ export async function listDoctors(
   return Array.isArray(data?.items) ? data.items : [];
 }
 
+
+export async function listReceptionDoctors(): Promise<ReceptionDoctor[]> {
+  const raw = await apiRequest<unknown>(
+    `/doctors${qs({ page: 1, pageSize: 100, status: "ACTIVE" })}`,
+  );
+  const data = unwrap<any>(raw);
+  if (Array.isArray(data)) return data;
+  return Array.isArray(data?.items) ? data.items : [];
+}
+
+export async function listReceptionDoctorSchedules(
+  doctorId: string,
+  branchId?: string,
+): Promise<ReceptionDoctorSchedule[]> {
+  const raw = await apiRequest<unknown>(
+    `/appointments/schedules${qs({ doctorId, branchId })}`,
+  );
+  const data = unwrap<any>(raw);
+  return Array.isArray(data) ? data : [];
+}
+
+export async function getReceptionDoctorAvailableSlots(
+  doctorId: string,
+  branchId: string,
+  date: string,
+): Promise<ReceptionDoctorSlotsResult> {
+  const raw = await apiRequest<unknown>(
+    `/appointments/available-slots${qs({ doctorId, branchId, date })}`,
+  );
+  return unwrap<ReceptionDoctorSlotsResult>(raw as any);
+}
+
 export async function listAppointments(input: {
   search?: string;
   status?: string;
@@ -156,7 +242,28 @@ export async function updateAppointmentStatus(
     `/appointments/${appointmentId}`,
     {
       method: "PATCH",
-      body: JSON.stringify({ status }),
+      body: { status },
+    },
+  );
+  return unwrap<AppointmentSummary>(raw as any);
+}
+
+
+export async function updateAppointmentForReception(
+  appointmentId: string,
+  input: {
+    doctorId?: string;
+    departmentId?: string;
+    startTime?: string;
+    endTime?: string;
+    durationMinutes?: number;
+  },
+): Promise<AppointmentSummary> {
+  const raw = await apiRequest<unknown>(
+    `/appointments/${appointmentId}`,
+    {
+      method: "PATCH",
+      body: input,
     },
   );
   return unwrap<AppointmentSummary>(raw as any);
@@ -167,7 +274,7 @@ export async function createOpdVisit(
 ): Promise<OpdVisitSummary> {
   const raw = await apiRequest<unknown>("/opd", {
     method: "POST",
-    body: JSON.stringify(input),
+    body: input,
   });
   return unwrap<OpdVisitSummary>(raw as any);
 }

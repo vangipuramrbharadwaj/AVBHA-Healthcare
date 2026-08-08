@@ -21,7 +21,11 @@ import {
   type AppointmentVisitType,
 } from "../api/appointments.api";
 import { createPatient } from "../api/patients.api";
-import { listDoctorManagement, type DoctorRecord } from "../api/doctors.api";
+import {
+  listDoctorAvailableSlots,
+  listDoctorManagement,
+  type DoctorRecord,
+} from "../api/doctors.api";
 import {
   listBranches,
   listDepartments,
@@ -949,9 +953,16 @@ function CreateAppointmentForm({
   const [departments, setDepartments] = useState<DepartmentSummary[]>([]);
   const [doctors, setDoctors] = useState<DoctorSummary[]>([]);
   const [doctorProfiles, setDoctorProfiles] = useState<DoctorRecord[]>([]);
-  const [bookedForDoctor, setBookedForDoctor] =
-    useState<AppointmentSummary[]>([]);
+  const [doctorSlots, setDoctorSlots] = useState<
+    Array<{
+      startTime: string;
+      endTime: string;
+      available: boolean;
+      reason: string | null;
+    }>
+  >([]);
   const [slotsLoading, setSlotsLoading] = useState(false);
+  const [slotsError, setSlotsError] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -1015,31 +1026,51 @@ function CreateAppointmentForm({
     setForm((current) => ({
       ...current,
       duration: minutes,
+      start: "",
     }));
   }, [selectedDoctorProfile]);
 
   useEffect(() => {
-    if (!form.doctorId || !form.date) {
-      setBookedForDoctor([]);
+    if (!form.doctorId || !form.branchId || !form.date) {
+      setDoctorSlots([]);
+      setSlotsError("");
       return;
     }
 
     setSlotsLoading(true);
-    const from = `${form.date}T00:00:00.000Z`;
-    const to = `${form.date}T23:59:59.999Z`;
+    setSlotsError("");
 
-    void listAppointments({
-      page: 1,
-      pageSize: 100,
-      doctorId: form.doctorId,
-      dateFrom: from,
-      dateTo: to,
-      sortOrder: "asc",
-    })
-      .then((result) => setBookedForDoctor(result.items))
-      .catch(() => setBookedForDoctor([]))
+    void listDoctorAvailableSlots(
+      form.doctorId,
+      form.branchId,
+      form.date,
+    )
+      .then((result) => {
+        setDoctorSlots(result.slots);
+        setForm((current) => {
+          const selectedStillAvailable = result.slots.some((slot) => {
+            const start = new Date(slot.startTime);
+            const value = `${String(start.getHours()).padStart(2, "0")}:${String(
+              start.getMinutes(),
+            ).padStart(2, "0")}`;
+            return value === current.start && slot.available;
+          });
+
+          return selectedStillAvailable
+            ? current
+            : { ...current, start: "" };
+        });
+      })
+      .catch((value) => {
+        setDoctorSlots([]);
+        setSlotsError(
+          value instanceof Error
+            ? value.message
+            : "Unable to load doctor availability.",
+        );
+      })
       .finally(() => setSlotsLoading(false));
-  }, [form.doctorId, form.date]);
+  }, [form.doctorId, form.branchId, form.date]);
 
   useEffect(() => {
     if (
@@ -1065,57 +1096,26 @@ function CreateAppointmentForm({
     form.duration ??
     15;
 
-  const slots = useMemo(() => {
-    const result: Array<{
-      value: string;
-      label: string;
-      booked: boolean;
-    }> = [];
+  const slots = useMemo(
+    () =>
+      doctorSlots.map((slot) => {
+        const start = new Date(slot.startTime);
+        const value = `${String(start.getHours()).padStart(2, "0")}:${String(
+          start.getMinutes(),
+        ).padStart(2, "0")}`;
 
-    const startMinutes = 9 * 60;
-    const endMinutes = 18 * 60;
-
-    for (
-      let minute = startMinutes;
-      minute + slotDuration <= endMinutes;
-      minute += slotDuration
-    ) {
-      const hours = Math.floor(minute / 60);
-      const minutes = minute % 60;
-      const value = `${String(hours).padStart(2, "0")}:${String(
-        minutes,
-      ).padStart(2, "0")}`;
-
-      const slotStart = new Date(`${form.date}T${value}:00`);
-      const slotEnd = new Date(
-        slotStart.getTime() + slotDuration * 60_000,
-      );
-
-      const booked = bookedForDoctor.some((appointment) => {
-        if (
-          ["CANCELLED", "NO_SHOW", "RESCHEDULED"].includes(
-            appointment.status,
-          )
-        ) {
-          return false;
-        }
-        const bookedStart = new Date(appointment.startTime);
-        const bookedEnd = new Date(appointment.endTime);
-        return bookedStart < slotEnd && bookedEnd > slotStart;
-      });
-
-      result.push({
-        value,
-        label: slotStart.toLocaleTimeString("en-IN", {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-        booked,
-      });
-    }
-
-    return result;
-  }, [bookedForDoctor, form.date, slotDuration]);
+        return {
+          value,
+          label: start.toLocaleTimeString("en-IN", {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+          booked: !slot.available,
+          reason: slot.reason,
+        };
+      }),
+    [doctorSlots],
+  );
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -1136,6 +1136,11 @@ function CreateAppointmentForm({
 
     if (!form.doctorId) {
       setError("Select a doctor.");
+      return;
+    }
+
+    if (!form.start) {
+      setError("Select an available doctor time slot.");
       return;
     }
 
@@ -1373,6 +1378,7 @@ function CreateAppointmentForm({
                 ...current,
                 departmentId: event.target.value,
                 doctorId: "",
+                start: "",
               }))
             }
           >
@@ -1394,6 +1400,7 @@ function CreateAppointmentForm({
               setForm((current) => ({
                 ...current,
                 doctorId: event.target.value,
+                start: "",
               }))
             }
           >
@@ -1428,12 +1435,8 @@ function CreateAppointmentForm({
             required
             type="time"
             value={form.start}
-            onChange={(event) =>
-              setForm((current) => ({
-                ...current,
-                start: event.target.value,
-              }))
-            }
+            readOnly
+            title="Select a time from Doctor Availability"
           />
         </label>
 
@@ -1561,12 +1564,15 @@ function CreateAppointmentForm({
           <h3>
             {selectedDoctorProfile
               ? [
-                  selectedDoctorProfile.employee.firstName,
-                  selectedDoctorProfile.employee.middleName,
-                  selectedDoctorProfile.employee.lastName,
+                  selectedDoctorProfile.employee?.firstName ??
+                    selectedDoctorProfile.firstName,
+                  selectedDoctorProfile.employee?.middleName ??
+                    selectedDoctorProfile.middleName,
+                  selectedDoctorProfile.employee?.lastName ??
+                    selectedDoctorProfile.lastName,
                 ]
                   .filter(Boolean)
-                  .join(" ")
+                  .join(" ") || selectedDoctorProfile.doctorCode
               : "Doctor availability"}
           </h3>
           <p>
@@ -1577,9 +1583,16 @@ function CreateAppointmentForm({
         </div>
 
         {!form.doctorId ? (
-          <p>Select a doctor to see the slot-wise schedule.</p>
+          <p>Select a doctor to see the configured availability.</p>
         ) : slotsLoading ? (
-          <p>Loading available slots…</p>
+          <p>Loading doctor availability…</p>
+        ) : slotsError ? (
+          <p>{slotsError}</p>
+        ) : slots.length === 0 ? (
+          <p>
+            No availability is configured for this doctor on the selected
+            date.
+          </p>
         ) : (
           <>
             <p>
@@ -1587,6 +1600,7 @@ function CreateAppointmentForm({
               {new Date(`${form.date}T12:00:00`).toLocaleDateString(
                 "en-IN",
                 {
+                  weekday: "short",
                   day: "2-digit",
                   month: "short",
                   year: "numeric",
@@ -1603,9 +1617,15 @@ function CreateAppointmentForm({
                   }`}
                   disabled={slot.booked}
                   title={
-                    slot.booked
+                    slot.reason === "BOOKED"
                       ? "Already booked"
-                      : "Select this appointment slot"
+                      : slot.reason === "BREAK"
+                        ? "Doctor break"
+                        : slot.reason === "HOLIDAY"
+                          ? "Doctor unavailable / holiday"
+                          : slot.reason === "LOCKED"
+                            ? "Temporarily reserved"
+                            : "Select this appointment slot"
                   }
                   onClick={() =>
                     setForm((current) => ({

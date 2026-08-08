@@ -23,33 +23,43 @@ export async function createDoctor(
   userId: string,
   input: CreateDoctorInput,
 ) {
-  const employee = await repository.findEmployeeForDoctor(
+  const department = await repository.findDepartment(
     hospitalId,
-    input.employeeId,
+    input.departmentId,
   );
 
-  if (!employee) {
+  if (!department) {
     throw new AppError(
-      "Active employee was not found in this hospital",
+      "Active department was not found in this hospital",
       400,
-      "INVALID_EMPLOYEE",
+      "INVALID_DEPARTMENT",
     );
   }
 
-  if (employee.doctor) {
-    throw new AppError(
-      "This employee already has a doctor profile",
-      409,
-      "DOCTOR_ALREADY_EXISTS",
+  if (input.employeeId) {
+    const employee = await repository.findEmployeeForDoctor(
+      hospitalId,
+      input.employeeId,
     );
+
+    if (!employee) {
+      throw new AppError(
+        "Active employee was not found in this hospital",
+        400,
+        "INVALID_EMPLOYEE",
+      );
+    }
+
+    if (employee.doctor) {
+      throw new AppError(
+        "This employee already has a doctor profile",
+        409,
+        "DOCTOR_ALREADY_EXISTS",
+      );
+    }
   }
 
-  return repository.createDoctor(
-    hospitalId,
-    userId,
-    employee.departmentId,
-    input,
-  );
+  return repository.createDoctor(hospitalId, userId, input);
 }
 
 export async function updateDoctor(
@@ -58,6 +68,21 @@ export async function updateDoctor(
   id: string,
   input: UpdateDoctorInput,
 ) {
+  if (input.departmentId) {
+    const department = await repository.findDepartment(
+      hospitalId,
+      input.departmentId,
+    );
+
+    if (!department) {
+      throw new AppError(
+        "Active department was not found in this hospital",
+        400,
+        "INVALID_DEPARTMENT",
+      );
+    }
+  }
+
   const doctor = await repository.updateDoctor(
     hospitalId,
     userId,
