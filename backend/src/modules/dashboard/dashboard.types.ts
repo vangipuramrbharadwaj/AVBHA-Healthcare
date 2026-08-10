@@ -1,9 +1,11 @@
 export interface DashboardMetric {
   key: string;
   label: string;
-  value: number | null;
-  status: "AVAILABLE" | "MODULE_NOT_IMPLEMENTED";
+  value: number | string;
+  status: "AVAILABLE";
   route?: string;
+  tone?: "BLUE" | "GREEN" | "AMBER" | "RED" | "PURPLE";
+  helper?: string;
 }
 
 export interface DashboardQuickAction {
@@ -26,6 +28,45 @@ export interface DashboardSecuritySummary {
   criticalEventsToday: number;
 }
 
+export interface DashboardTodaySummary {
+  patientsRegistered: number;
+  appointments: number;
+  opdVisits: number;
+  ipdAdmissions: number;
+  discharges: number;
+  otCases: number;
+  payments: number;
+  revenue: number;
+}
+
+export interface DashboardClinicalQueues {
+  appointmentsWaiting: number;
+  opdInProgress: number;
+  laboratoryPending: number;
+  radiologyPending: number;
+  pharmacyPending: number;
+  otPending: number;
+  dischargePlanned: number;
+  billingOutstandingCount: number;
+  billingOutstandingAmount: number;
+}
+
+export interface DashboardBedSummary {
+  total: number;
+  available: number;
+  occupied: number;
+  reserved: number;
+  maintenance: number;
+  blocked: number;
+  occupancyPercent: number;
+}
+
+export interface DashboardPharmacySummary {
+  expiryAlerts: number;
+  expiredBatches: number;
+  outOfStockBatches: number;
+}
+
 export interface DashboardResponse {
   generatedAt: string;
   hospital: {
@@ -44,6 +85,10 @@ export interface DashboardResponse {
     roles: string[];
   };
   metrics: DashboardMetric[];
+  today: DashboardTodaySummary;
+  queues: DashboardClinicalQueues;
+  beds: DashboardBedSummary;
+  pharmacy: DashboardPharmacySummary;
   workforce?: DashboardWorkforceSummary;
   security?: DashboardSecuritySummary;
   quickActions: DashboardQuickAction[];

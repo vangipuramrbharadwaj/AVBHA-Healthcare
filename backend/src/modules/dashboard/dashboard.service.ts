@@ -25,38 +25,50 @@ function quickActions(context: DashboardContext) {
     {
       key: "register-patient",
       label: "Register Patient",
-      route: "/patients/new",
+      route: "/patients",
       requiredPermission: "patients.create",
     },
     {
       key: "book-appointment",
       label: "Book Appointment",
-      route: "/appointments/new",
+      route: "/appointments",
       requiredPermission: "appointments.create",
     },
     {
-      key: "add-employee",
-      label: "Add Employee",
-      route: "/employees/new",
-      requiredPermission: "employees.create",
+      key: "reception-opd",
+      label: "Create OPD",
+      route: "/reception-opd",
+      requiredPermission: "opd.create",
     },
     {
-      key: "add-doctor",
-      label: "Add Doctor",
-      route: "/doctors/new",
-      requiredPermission: "doctors.create",
+      key: "ipd-admission",
+      label: "IPD Admission",
+      route: "/ipd",
+      requiredPermission: "ipd.create",
     },
     {
-      key: "view-reports",
-      label: "View Reports",
+      key: "laboratory",
+      label: "Laboratory Queue",
+      route: "/laboratory",
+      requiredPermission: "laboratory.view",
+    },
+    {
+      key: "pharmacy",
+      label: "Pharmacy Queue",
+      route: "/pharmacy",
+      requiredPermission: "pharmacy.view",
+    },
+    {
+      key: "billing",
+      label: "Billing",
+      route: "/billing",
+      requiredPermission: "billing.view",
+    },
+    {
+      key: "reports",
+      label: "Reports",
       route: "/reports",
       requiredPermission: "reports.view",
-    },
-    {
-      key: "hospital-settings",
-      label: "Hospital Settings",
-      route: "/settings",
-      requiredPermission: "settings.view",
     },
   ];
 
@@ -106,6 +118,40 @@ export async function getDashboard(
     );
   }
 
+  const [
+    totalPatients,
+    today,
+    queues,
+    beds,
+    pharmacy,
+    activeIpd,
+  ] = await Promise.all([
+    repository.patientTotal(
+      context.hospitalId,
+      effectiveBranchId,
+    ),
+    repository.todaySummary(
+      context.hospitalId,
+      effectiveBranchId,
+    ),
+    repository.clinicalQueues(
+      context.hospitalId,
+      effectiveBranchId,
+    ),
+    repository.bedSummary(
+      context.hospitalId,
+      effectiveBranchId,
+    ),
+    repository.pharmacySummary(
+      context.hospitalId,
+      effectiveBranchId,
+    ),
+    repository.activeIpdCount(
+      context.hospitalId,
+      effectiveBranchId,
+    ),
+  ]);
+
   const response: DashboardResponse = {
     generatedAt: new Date().toISOString(),
     hospital: {
@@ -129,64 +175,87 @@ export async function getDashboard(
       {
         key: "patients-total",
         label: "Total Patients",
-        value: null,
-        status: "MODULE_NOT_IMPLEMENTED",
+        value: totalPatients,
+        status: "AVAILABLE",
         route: "/patients",
+        tone: "BLUE",
+        helper: `${today.patientsRegistered} registered today`,
       },
       {
         key: "appointments-today",
         label: "Appointments Today",
-        value: null,
-        status: "MODULE_NOT_IMPLEMENTED",
+        value: today.appointments,
+        status: "AVAILABLE",
         route: "/appointments",
+        tone: "PURPLE",
+        helper: `${queues.appointmentsWaiting} currently active`,
       },
       {
         key: "current-inpatients",
         label: "Current Inpatients",
-        value: null,
-        status: "MODULE_NOT_IMPLEMENTED",
+        value: activeIpd,
+        status: "AVAILABLE",
         route: "/ipd",
+        tone: "AMBER",
+        helper: `${queues.dischargePlanned} discharge planned`,
       },
       {
         key: "available-beds",
         label: "Available Beds",
-        value: null,
-        status: "MODULE_NOT_IMPLEMENTED",
-        route: "/ipd/beds",
+        value: beds.available,
+        status: "AVAILABLE",
+        route: "/ipd",
+        tone: "GREEN",
+        helper: `${beds.occupancyPercent}% occupancy`,
       },
       {
         key: "revenue-today",
         label: "Revenue Today",
-        value: null,
-        status: "MODULE_NOT_IMPLEMENTED",
+        value: `₹${today.revenue.toLocaleString("en-IN", {
+          maximumFractionDigits: 2,
+        })}`,
+        status: "AVAILABLE",
         route: "/billing",
+        tone: "GREEN",
+        helper: `${today.payments} payment(s) received`,
       },
       {
         key: "pending-laboratory",
         label: "Pending Laboratory",
-        value: null,
-        status: "MODULE_NOT_IMPLEMENTED",
+        value: queues.laboratoryPending,
+        status: "AVAILABLE",
         route: "/laboratory",
+        tone:
+          queues.laboratoryPending > 0 ? "AMBER" : "GREEN",
+        helper: "Orders awaiting final report",
       },
       {
         key: "pending-radiology",
         label: "Pending Radiology",
-        value: null,
-        status: "MODULE_NOT_IMPLEMENTED",
+        value: queues.radiologyPending,
+        status: "AVAILABLE",
         route: "/radiology",
+        tone:
+          queues.radiologyPending > 0 ? "AMBER" : "GREEN",
+        helper: "Imaging orders still open",
       },
       {
         key: "pharmacy-expiry-alerts",
         label: "Pharmacy Expiry Alerts",
-        value: null,
-        status: "MODULE_NOT_IMPLEMENTED",
+        value: pharmacy.expiryAlerts,
+        status: "AVAILABLE",
         route: "/pharmacy",
+        tone:
+          pharmacy.expiryAlerts > 0 ? "RED" : "GREEN",
+        helper: `${pharmacy.expiredBatches} expired batch(es)`,
       },
     ],
+    today,
+    queues,
+    beds,
+    pharmacy,
     quickActions: quickActions(context),
-    notices: [
-      "Clinical dashboard metrics will activate after the patient, appointment, IPD, billing, laboratory, radiology and pharmacy database migrations are implemented.",
-    ],
+    notices: [],
   };
 
   if (

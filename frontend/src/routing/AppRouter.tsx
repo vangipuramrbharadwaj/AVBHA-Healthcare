@@ -23,6 +23,12 @@ import LaboratoryPage from "../pages/LaboratoryPage";
 import RadiologyPage from "../pages/RadiologyPage";
 import BillingPage from "../pages/BillingPage";
 import OperationTheatrePage from "../pages/OperationTheatrePage";
+import EmployeesPage from "../pages/EmployeesPage";
+import DepartmentsPage from "../pages/DepartmentsPage";
+import UsersPage from "../pages/UsersPage";
+import RolesPermissionsPage from "../pages/RolesPermissionsPage";
+import SettingsPage from "../pages/SettingsPage";
+
 
 
 const modulePage=(permission:string,title:string,description:string)=><PermissionRoute permission={permission}><ModulePlaceholderPage title={title} description={description}/></PermissionRoute>;
@@ -53,12 +59,12 @@ export function AppRouter(){
             <Route path="operation-theatre/*" element={<PermissionRoute permission="operation_theatre.view"><OperationTheatrePage /></PermissionRoute>}/>
             <Route path="reports/*" element={modulePage("reports.view","Reports & MIS","Operational reports, analytics and management information.")}/>
             <Route path="notifications/*" element={<ModulePlaceholderPage title="Notifications" description="In-app alerts and communication centre."/>}/>
-            <Route path="employees/*" element={modulePage("employees.view","Employees","Employee administration and workforce records.")}/>
+            <Route path="employees/*" element={<PermissionRoute permission="employees.view"><EmployeesPage /></PermissionRoute>}/>
             <Route path="doctors/*" element={<PermissionRoute permission="doctors.view"><DoctorsPage /></PermissionRoute>} />
-            <Route path="departments/*" element={modulePage("departments.view","Departments","Hospital department master and organizational structure.")}/>
-            <Route path="users/*" element={modulePage("users.view","Users","Application user accounts and access administration.")}/>
-            <Route path="roles/*" element={<PermissionRoute anyOf={["roles.view","permissions.view"]}><ModulePlaceholderPage title="Roles & Permissions" description="Role-based access control and application permissions."/></PermissionRoute>}/>
-            <Route path="settings/*" element={modulePage("settings.view","Settings","Hospital application and operational configuration.")}/>
+            <Route path="departments/*" element={<PermissionRoute permission="departments.view"><DepartmentsPage /></PermissionRoute>}/>
+            <Route path="users/*" element={<PermissionRoute permission="users.view"><UsersPage /></PermissionRoute>}/>
+            <Route path="roles/*" element={<PermissionRoute anyOf={["roles.view","permissions.view"]}><RolesPermissionsPage /></PermissionRoute>}/>
+            <Route path="settings/*" element={<PermissionRoute anyOf={["settings.view","hospitals.view","branches.view"]}><SettingsPage /></PermissionRoute>}/>
             <Route path="403" element={<AccessDeniedPage/>}/>
             <Route path="*" element={<NotFoundPage/>}/>
           </Route>

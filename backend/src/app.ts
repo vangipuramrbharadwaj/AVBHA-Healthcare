@@ -25,6 +25,10 @@ import { departmentsRouter } from "./modules/departments";
 import { designationsRouter } from "./modules/designations";
 import { employeesRouter } from "./modules/employees";
 import { doctorsRouter } from "./modules/doctors";
+import { usersRouter } from "./modules/users";
+import { rolesRouter } from "./modules/roles";
+import { permissionsRouter } from "./modules/permissions";
+
 import { hospitalsRouter } from "./modules/hospitals";
 import { appointmentsRouter } from "./modules/appointments";
 import {
@@ -90,6 +94,9 @@ app.use("/api/v1/departments", departmentsRouter);
 app.use("/api/v1/designations", designationsRouter);
 app.use("/api/v1/employees", employeesRouter);
 app.use("/api/v1/doctors", doctorsRouter);
+app.use("/api/v1/users", usersRouter);
+app.use("/api/v1/roles", rolesRouter);
+app.use("/api/v1/permissions", permissionsRouter);
 app.use("/api/v1/patients", patientsRouter);
 app.use("/api/v1/appointments", appointmentsRouter);
 app.use("/api/v1/opd", opdRouter);

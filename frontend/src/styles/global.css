@@ -61,26 +61,25 @@ textarea {
 }
 
 
-/* ===== AVBHA UI DESIGN SYSTEM — 2026-08-10 =====
-   Canonical typography and control sizing across the complete application. */
-:root{
-  --avbha-font:Verdana,Geneva,Tahoma,sans-serif;
-  --avbha-fs-eyebrow:10px;
-  --avbha-fs-hero-title:28px;
-  --avbha-fs-hero-copy:12px;
-  --avbha-fs-section-title:18px;
-  --avbha-fs-body:12px;
-  --avbha-fs-small:10px;
-  --avbha-fs-table-head:9px;
-  --avbha-fs-table-cell:11px;
-  --avbha-fs-button:11px;
-  --avbha-control-height:42px;
-}
-html,body,#root,button,input,select,textarea{font-family:var(--avbha-font)!important}
-button,.button{font-size:var(--avbha-fs-button);font-weight:800}
-input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),select:not([multiple]){min-height:var(--avbha-control-height);height:var(--avbha-control-height);font-size:var(--avbha-fs-body)}
-textarea{font-size:var(--avbha-fs-body)}
-.page-header h1{font-size:24px}.page-header p{font-size:var(--avbha-fs-body)}
-.section-heading h2,.form-section-heading h2{font-size:var(--avbha-fs-section-title)}
-.data-table th{font-size:var(--avbha-fs-table-head)}.data-table td{font-size:var(--avbha-fs-table-cell)}
-.patient-form label,.compact-form label,.family-form>label,.form-stack label{font-size:var(--avbha-fs-body)}
+.dashboard-page{display:flex;flex-direction:column;gap:16px}
+.dashboard-hero{display:flex;justify-content:space-between;align-items:center;gap:20px;padding:22px 24px;border-radius:20px;background:linear-gradient(118deg,#0757aa,#0874cd 58%,#12a0c9);color:#fff;box-shadow:0 16px 38px rgba(5,82,157,.16)}
+.dashboard-eyebrow{font-size:10px;font-weight:900;letter-spacing:.14em}
+.dashboard-hero h1{margin:5px 0;font-size:28px}.dashboard-hero p{margin:0;font-size:12px;color:#d9edff}
+.dashboard-refresh{border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.12);color:#fff;border-radius:10px;padding:10px 14px;font-size:11px;font-weight:800;white-space:nowrap}
+.dashboard-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.dashboard-metric{position:relative;overflow:hidden;border:1px solid var(--border);background:#fff;border-radius:15px;padding:16px;text-align:left;display:grid;gap:8px;min-height:126px;box-shadow:0 7px 18px rgba(16,46,82,.035)}
+.dashboard-metric:before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:#0b67c4}
+.dashboard-metric span{font-size:10px;color:var(--muted);font-weight:800}.dashboard-metric strong{font-size:25px;color:var(--navy)}.dashboard-metric small{font-size:9px;color:#8190a2}
+.dashboard-metric.tone-green:before{background:#1d9a62}.dashboard-metric.tone-amber:before{background:#e59b23}.dashboard-metric.tone-red:before{background:#d34b4b}.dashboard-metric.tone-purple:before{background:#7b61c9}
+.dashboard-layout{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+.dashboard-card{background:#fff;border:1px solid var(--border);border-radius:16px;overflow:hidden;box-shadow:0 7px 20px rgba(20,52,89,.035)}
+.dashboard-card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;padding:15px 17px;border-bottom:1px solid #edf2f7}.dashboard-card-head span{font-size:9px;color:#0a67bd;font-weight:900;letter-spacing:.12em}.dashboard-card-head h2{margin:4px 0 0;font-size:17px}
+.dashboard-activity-grid,.dashboard-bed-grid,.dashboard-workforce{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:14px}.dashboard-workforce{grid-template-columns:repeat(4,1fr)}
+.dashboard-activity{padding:11px;border:1px solid #e1e9f2;border-radius:10px;background:#fafcff}.dashboard-activity span{display:block;font-size:9px;color:#74869b}.dashboard-activity strong{display:block;margin-top:5px;font-size:17px;color:#213d5b}
+.dashboard-big-percent{font-size:22px;color:#176cba}.dashboard-bed-progress{height:8px;margin:14px 14px 2px;background:#e6edf5;border-radius:999px;overflow:hidden}.dashboard-bed-progress span{display:block;height:100%;background:linear-gradient(90deg,#0b68c5,#1d9a62);border-radius:999px}
+.dashboard-queue-list{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:14px}.dashboard-queue{border:1px solid #e0e8f1;background:#fff;border-radius:10px;padding:10px;text-align:left;display:grid;grid-template-columns:1fr auto;gap:3px}.dashboard-queue span{font-size:9px;color:#60758d;font-weight:700}.dashboard-queue strong{font-size:15px;color:#213b57}.dashboard-queue small{grid-column:1/-1;font-size:8px;color:#8a98a8}.dashboard-queue.has-items{background:#fffaf1;border-color:#ead9b4}.dashboard-queue.has-items strong{color:#956109}
+.dashboard-finance-box{margin:14px;padding:14px;border-radius:12px;background:linear-gradient(135deg,#eef8ff,#f2fff7);border:1px solid #d9e9f5}.dashboard-finance-box span,.dashboard-finance-box small{display:block;font-size:9px;color:#657b92}.dashboard-finance-box strong{display:block;margin:5px 0;font-size:23px;color:#164a76}
+.dashboard-alert-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 14px 14px}.dashboard-alert-stat{padding:11px;border:1px solid #e1e9f2;border-radius:10px;background:#fbfdff}.dashboard-alert-stat span{display:block;font-size:8px;color:#73869c}.dashboard-alert-stat strong{display:block;margin-top:4px;font-size:16px}.dashboard-alert-stat small{font-size:8px;color:#7d8da0}.dashboard-alert-stat.warn{background:#fff8ec;border-color:#ead7ac}.dashboard-alert-stat.warn strong{color:#985f08}
+.dashboard-security{display:flex;gap:8px;flex-wrap:wrap;padding:10px 12px;border:1px solid #dfe7f0;border-radius:12px;background:#fff}.dashboard-security span{font-size:9px;color:#657a92}.dashboard-security b{color:#203b57}
+@media(max-width:1150px){.dashboard-metrics{grid-template-columns:repeat(2,1fr)}.dashboard-layout{grid-template-columns:1fr}}
+@media(max-width:650px){.dashboard-hero{flex-direction:column;align-items:flex-start}.dashboard-refresh{width:100%}.dashboard-metrics{grid-template-columns:1fr 1fr}.dashboard-activity-grid,.dashboard-bed-grid,.dashboard-workforce{grid-template-columns:1fr 1fr}.dashboard-queue-list,.dashboard-alert-grid{grid-template-columns:1fr}}
