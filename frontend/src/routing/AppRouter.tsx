@@ -16,8 +16,14 @@ import ReceptionOpdPage from "../pages/ReceptionOpdPage";
 import AppointmentsPage from "../pages/AppointmentsPage";
 import DoctorsPage from "../pages/DoctorsPage";
 import OpdPage from "../pages/OpdPage";
+import IpdPage from "../pages/IpdPage";
 import PharmacyPage from "../pages/PharmacyPage";
 import InventoryPage from "../pages/InventoryPage";
+import LaboratoryPage from "../pages/LaboratoryPage";
+import RadiologyPage from "../pages/RadiologyPage";
+import BillingPage from "../pages/BillingPage";
+import OperationTheatrePage from "../pages/OperationTheatrePage";
+
 
 const modulePage=(permission:string,title:string,description:string)=><PermissionRoute permission={permission}><ModulePlaceholderPage title={title} description={description}/></PermissionRoute>;
 
@@ -38,13 +44,13 @@ export function AppRouter(){
             <Route path="patients/:id/edit" element={<PermissionRoute permission="patients.update"><PatientEditPage/></PermissionRoute>}/>
             <Route path="appointments/*" element={<PermissionRoute permission="appointments.view"><AppointmentsPage /></PermissionRoute>} />
             <Route path="opd/*" element={<PermissionRoute permission="opd.view"><OpdPage /></PermissionRoute>}/>
-            <Route path="ipd/*" element={modulePage("ipd.view","IPD","Admissions, beds, nursing, rounds and inpatient management.")}/>
-            <Route path="laboratory/*" element={modulePage("laboratory.view","Laboratory","Lab catalog, orders, samples, results and verification.")}/>
-            <Route path="radiology/*" element={modulePage("radiology.view","Radiology","Imaging orders, studies, contrast administration and reports.")}/>
+            <Route path="ipd/*" element={<PermissionRoute permission="ipd.view"><IpdPage /></PermissionRoute>}/>
+            <Route path="laboratory/*" element={<PermissionRoute permission="laboratory.view"><LaboratoryPage /></PermissionRoute>}/>
+            <Route path="radiology/*" element={<PermissionRoute permission="radiology.view"><RadiologyPage /></PermissionRoute>}/>
             <Route path="pharmacy/*" element={<PermissionRoute permission="pharmacy.view"><PharmacyPage /></PermissionRoute>}/>
             <Route path="inventory/*" element={<PermissionRoute permission="inventory.view"><InventoryPage /></PermissionRoute>}/>
-            <Route path="billing/*" element={modulePage("billing.view","Billing & Payments","Invoices, payments, advances, refunds and patient ledger.")}/>
-            <Route path="operation-theatre/*" element={modulePage("operation_theatre.view","Operation Theatre","OT rooms, bookings, theatre workflow and recovery.")}/>
+            <Route path="billing/*" element={<PermissionRoute permission="billing.view"><BillingPage /></PermissionRoute>}/>
+            <Route path="operation-theatre/*" element={<PermissionRoute permission="operation_theatre.view"><OperationTheatrePage /></PermissionRoute>}/>
             <Route path="reports/*" element={modulePage("reports.view","Reports & MIS","Operational reports, analytics and management information.")}/>
             <Route path="notifications/*" element={<ModulePlaceholderPage title="Notifications" description="In-app alerts and communication centre."/>}/>
             <Route path="employees/*" element={modulePage("employees.view","Employees","Employee administration and workforce records.")}/>

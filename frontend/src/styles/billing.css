@@ -1,0 +1,31 @@
+
+.hms-module-page{display:flex;flex-direction:column;gap:16px;padding:22px;background:#f5f8fc;min-height:100%;color:#17324e}
+.hms-module-hero{display:flex;align-items:center;justify-content:space-between;gap:22px;padding:23px 25px;border-radius:22px;background:linear-gradient(118deg,#0755a8,#0b72cb 58%,#16a4cb);color:#fff;box-shadow:0 18px 42px rgba(5,82,157,.16)}
+.hms-module-hero span,.hms-card-head span{font-size:9px;font-weight:900;letter-spacing:.14em}
+.hms-module-hero h1{margin:5px 0;font-size:28px}.hms-module-hero p{margin:0;max-width:760px;font-size:11px;line-height:1.55;color:#d9edff}
+.hms-module-hero button,.hms-primary{border:0;border-radius:10px;background:#fff;color:#075db5;padding:10px 14px;font-weight:850;cursor:pointer}
+.hms-tabs{display:flex;gap:5px;padding:5px;border:1px solid #dce6f1;background:#fff;border-radius:13px;width:max-content;max-width:100%;overflow:auto}
+.hms-tabs button{border:0;background:transparent;border-radius:9px;padding:9px 13px;font-size:10px;font-weight:800;color:#637990;white-space:nowrap;cursor:pointer}.hms-tabs button.active{background:#eaf4ff;color:#0762b9}
+.hms-kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}.hms-kpi{background:#fff;border:1px solid #dce6f1;border-radius:16px;padding:15px}.hms-kpi span{font-size:8px;font-weight:900;color:#7b8b9f;text-transform:uppercase}.hms-kpi strong{display:block;margin-top:7px;font-size:23px;color:#173a5b}
+.hms-card{background:#fff;border:1px solid #dce6f1;border-radius:18px;overflow:hidden;box-shadow:0 7px 22px rgba(29,65,105,.035)}.hms-card-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;padding:17px 19px;border-bottom:1px solid #edf2f7}.hms-card-head span{color:#0b67be}.hms-card-head h2{margin:4px 0 0;font-size:18px}.hms-card-head p{margin:4px 0 0;color:#7c8da0;font-size:10px}
+.hms-grid-2{display:grid;grid-template-columns:1.2fr .8fr;gap:13px}.hms-table-wrap{overflow:auto}.hms-table{width:100%;min-width:980px;border-collapse:collapse}.hms-table th,.hms-table td{padding:11px 13px;border-bottom:1px solid #edf2f7;text-align:left;vertical-align:middle}.hms-table th{font-size:8px;color:#72869c;text-transform:uppercase;letter-spacing:.07em;background:#fbfcfe}.hms-table td{font-size:9px;color:#526981}.hms-table strong,.hms-table small{display:block}.hms-table strong{font-size:10px;color:#203b57}.hms-table small{margin-top:3px;color:#8391a2;font-size:8px}
+.hms-pill{display:inline-flex;border-radius:999px;padding:5px 8px;font-size:7px;font-weight:900;background:#eaf3ff;color:#0a62b8}.hms-pill.good{background:#e8f7ee;color:#187747}.hms-pill.warn{background:#fff3dc;color:#955f08}.hms-pill.bad{background:#fdeaea;color:#a43131}
+.hms-action{border:1px solid #bcd8f2;background:#fff;color:#0863b9;border-radius:8px;padding:7px 9px;font-size:8px;font-weight:850;cursor:pointer}
+.hms-form{padding:15px;display:grid;gap:11px}.hms-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.hms-field{display:grid;gap:6px}.hms-field span{font-size:8px;color:#536b84;font-weight:850}.hms-field input,.hms-field select,.hms-field textarea{width:100%;box-sizing:border-box;border:1px solid #ccd9e7;border-radius:9px;background:#fff;padding:0 10px;color:#203b57;font:inherit}.hms-field input,.hms-field select{height:39px}.hms-field textarea{min-height:82px;padding-top:9px;resize:vertical}
+.hms-actions{display:flex;justify-content:flex-end;gap:8px}.hms-actions button{border:0;border-radius:9px;background:#0968c5;color:#fff;padding:9px 12px;font-size:9px;font-weight:850;cursor:pointer}
+.hms-empty{padding:30px;text-align:center;color:#8392a3;font-size:10px}.hms-alert{padding:11px 14px;border-radius:11px;font-size:10px;font-weight:750}.hms-alert.error{background:#fff0f0;border:1px solid #efcaca;color:#a72f2f}.hms-alert.success{background:#edf9f2;border:1px solid #cdebd8;color:#1c7044}
+.hms-modal-bg{position:fixed;inset:0;z-index:1200;background:rgba(5,22,42,.58);backdrop-filter:blur(4px);display:grid;place-items:center;padding:18px}.hms-modal{width:min(900px,96vw);max-height:92vh;overflow:auto;background:#fff;border-radius:20px;box-shadow:0 30px 90px rgba(5,25,50,.3)}.hms-modal>header{display:flex;justify-content:space-between;align-items:center;padding:17px 19px;border-bottom:1px solid #e3eaf2}.hms-modal h2{margin:2px 0;font-size:18px}.hms-modal header button{width:35px;height:35px;border:0;border-radius:9px;background:#f0f4f8;font-size:20px;cursor:pointer}
+.hms-detail-list{display:flex;flex-direction:column;gap:8px;padding:14px}.hms-detail-list article{border:1px solid #e0e9f2;border-radius:11px;padding:11px;background:#fbfdff}.hms-detail-list header{display:flex;justify-content:space-between;gap:10px}.hms-detail-list p{margin:6px 0 0;font-size:9px;line-height:1.5;color:#4e647c}
+button:disabled{opacity:.55;cursor:not-allowed!important}
+@media(max-width:1000px){.hms-kpis{grid-template-columns:repeat(3,1fr)}.hms-grid-2{grid-template-columns:1fr}}
+@media(max-width:650px){.hms-module-page{padding:12px}.hms-module-hero{flex-direction:column;align-items:flex-start}.hms-kpis{grid-template-columns:1fr 1fr}.hms-form-grid{grid-template-columns:1fr}}
+
+/* AVBHA unified sizing */
+.hms-module-page{font-family:var(--avbha-font, Verdana,Geneva,Tahoma,sans-serif)}
+.hms-module-hero h1{font-size:var(--avbha-fs-hero-title,28px)}.hms-module-hero p{font-size:var(--avbha-fs-hero-copy,12px)}
+.hms-module-hero span,.hms-card-head span{font-size:var(--avbha-fs-eyebrow,10px)}
+.hms-module-hero button,.hms-primary,.hms-tabs button,.hms-action,.hms-actions button{font-size:var(--avbha-fs-button,11px)}
+.hms-card-head h2,.hms-modal h2{font-size:var(--avbha-fs-section-title,18px)}.hms-card-head p{font-size:var(--avbha-fs-small,10px)}
+.hms-table th{font-size:var(--avbha-fs-table-head,9px)}.hms-table td,.hms-table strong{font-size:var(--avbha-fs-table-cell,11px)}.hms-table small{font-size:var(--avbha-fs-small,10px)}
+.hms-field span{font-size:var(--avbha-fs-small,10px)}.hms-field input,.hms-field select,.hms-field textarea{font-size:var(--avbha-fs-body,12px)}
+.hms-pill{font-size:9px}.hms-alert,.hms-empty{font-size:var(--avbha-fs-body,12px)}

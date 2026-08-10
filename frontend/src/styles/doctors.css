@@ -101,3 +101,16 @@
 .doctor-card .doctor-availability-day strong{font-size:10px;padding:3px 5px}
 .doctor-card .doctor-availability-day span{font-size:11px;padding-top:2px}
 .doctor-card .doctor-availability-none{font-size:10px;padding:5px 8px}
+
+/* AVBHA unified sizing */
+.doctor-page{font-family:var(--avbha-font, Verdana,Geneva,Tahoma,sans-serif)}
+.doctor-hero h1{font-size:var(--avbha-fs-hero-title,28px)}
+.doctor-hero p{font-size:var(--avbha-fs-hero-copy,12px)}
+.doctor-eyebrow{font-size:var(--avbha-fs-eyebrow,10px)}
+.doctor-primary,.doctor-toolbar button,.doctor-secondary,.doctor-actions button,.doctor-link{font-size:var(--avbha-fs-button,11px)}
+.doctor-card th{font-size:var(--avbha-fs-table-head,9px)}
+.doctor-card td,.doctor-card td strong{font-size:var(--avbha-fs-table-cell,11px)}
+.doctor-card small{font-size:var(--avbha-fs-small,10px)}
+.doctor-section-title h3,.doctor-modal-head h2{font-size:var(--avbha-fs-section-title,18px)}
+.doctor-section-title p,.doctor-modal-head p{font-size:var(--avbha-fs-small,10px)}
+.doctor-grid label,.doctor-availability-row label{font-size:var(--avbha-fs-body,12px)}

@@ -60,3 +60,27 @@ textarea {
   display: block;
 }
 
+
+/* ===== AVBHA UI DESIGN SYSTEM — 2026-08-10 =====
+   Canonical typography and control sizing across the complete application. */
+:root{
+  --avbha-font:Verdana,Geneva,Tahoma,sans-serif;
+  --avbha-fs-eyebrow:10px;
+  --avbha-fs-hero-title:28px;
+  --avbha-fs-hero-copy:12px;
+  --avbha-fs-section-title:18px;
+  --avbha-fs-body:12px;
+  --avbha-fs-small:10px;
+  --avbha-fs-table-head:9px;
+  --avbha-fs-table-cell:11px;
+  --avbha-fs-button:11px;
+  --avbha-control-height:42px;
+}
+html,body,#root,button,input,select,textarea{font-family:var(--avbha-font)!important}
+button,.button{font-size:var(--avbha-fs-button);font-weight:800}
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),select:not([multiple]){min-height:var(--avbha-control-height);height:var(--avbha-control-height);font-size:var(--avbha-fs-body)}
+textarea{font-size:var(--avbha-fs-body)}
+.page-header h1{font-size:24px}.page-header p{font-size:var(--avbha-fs-body)}
+.section-heading h2,.form-section-heading h2{font-size:var(--avbha-fs-section-title)}
+.data-table th{font-size:var(--avbha-fs-table-head)}.data-table td{font-size:var(--avbha-fs-table-cell)}
+.patient-form label,.compact-form label,.family-form>label,.form-stack label{font-size:var(--avbha-fs-body)}

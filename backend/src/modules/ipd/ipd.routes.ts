@@ -15,8 +15,11 @@ import {
   createWardController,
   dischargePatientController,
   getAdmissionController,
+  getDischargeReadinessController,
   listAdmissionsController,
   listBedsController,
+  listWardsController,
+  listRoomsController,
   transferBedController,
 } from "./ipd.controller";
 import { IPD_PERMISSIONS } from "./ipd.permissions";
@@ -24,6 +27,8 @@ import { IPD_PERMISSIONS } from "./ipd.permissions";
 export const ipdRouter = Router();
 ipdRouter.use(authenticate, enforceTenant);
 
+ipdRouter.get("/wards", requirePermission(IPD_PERMISSIONS.VIEW), listWardsController);
+ipdRouter.get("/rooms", requirePermission(IPD_PERMISSIONS.VIEW), listRoomsController);
 ipdRouter.post("/wards", requirePermission(IPD_PERMISSIONS.UPDATE), createWardController);
 ipdRouter.post("/rooms", requirePermission(IPD_PERMISSIONS.UPDATE), createRoomController);
 ipdRouter.post("/beds", requirePermission(IPD_PERMISSIONS.UPDATE), createBedController);
@@ -32,6 +37,7 @@ ipdRouter.get("/beds", requirePermission(IPD_PERMISSIONS.VIEW), listBedsControll
 ipdRouter.post("/admissions", requirePermission(IPD_PERMISSIONS.CREATE), createAdmissionController);
 ipdRouter.get("/admissions", requirePermission(IPD_PERMISSIONS.VIEW), listAdmissionsController);
 ipdRouter.get("/admissions/:id", requirePermission(IPD_PERMISSIONS.VIEW), getAdmissionController);
+ipdRouter.get("/admissions/:id/discharge-readiness", requirePermission(IPD_PERMISSIONS.VIEW), getDischargeReadinessController);
 ipdRouter.post("/admissions/:id/transfer-bed", requirePermission(IPD_PERMISSIONS.UPDATE), transferBedController);
 
 ipdRouter.post("/admissions/:id/nursing-notes", requirePermission(IPD_PERMISSIONS.NURSING_CREATE), addNursingNoteController);

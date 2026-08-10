@@ -493,3 +493,12 @@
 .opd-panel .opd-medicine-result:last-child{
   border-bottom:0;
 }
+
+/* AVBHA unified sizing */
+.opd-page{font-family:var(--avbha-font, Verdana,Geneva,Tahoma,sans-serif)}
+.opd-hero h1{font-size:var(--avbha-fs-hero-title,28px)}.opd-hero p{font-size:var(--avbha-fs-hero-copy,12px)}
+.opd-eyebrow,.opd-kicker{font-size:var(--avbha-fs-eyebrow,10px)}
+.opd-tabs button,.opd-primary,.opd-secondary,.opd-actions button{font-size:var(--avbha-fs-button,11px)}
+.opd-card h2,.opd-card h3,.opd-section h2,.opd-section h3{font-size:var(--avbha-fs-section-title,18px)}
+.opd-table th{font-size:var(--avbha-fs-table-head,9px)}.opd-table td{font-size:var(--avbha-fs-table-cell,11px)}
+.opd-field label,.opd-field span{font-size:var(--avbha-fs-small,10px)}

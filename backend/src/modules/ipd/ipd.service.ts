@@ -39,6 +39,55 @@ async function nextAdmissionNumber(
   return nextIpdAdmissionNumber(hospitalId, date);
 }
 
+export function listWards(
+  hospitalId: string,
+  branchId?: string,
+) {
+  return prisma.ipdWard.findMany({
+    where: {
+      hospitalId,
+      ...(branchId ? { branchId } : {}),
+      status: "ACTIVE",
+    },
+    include: {
+      rooms: {
+        where: { status: "ACTIVE" },
+        include: {
+          beds: {
+            where: { status: "ACTIVE" },
+            orderBy: { bedCode: "asc" },
+          },
+        },
+        orderBy: { roomCode: "asc" },
+      },
+    },
+    orderBy: [{ wardName: "asc" }],
+  });
+}
+
+export function listRooms(
+  hospitalId: string,
+  branchId?: string,
+  wardId?: string,
+) {
+  return prisma.ipdRoom.findMany({
+    where: {
+      hospitalId,
+      ...(branchId ? { branchId } : {}),
+      ...(wardId ? { wardId } : {}),
+      status: "ACTIVE",
+    },
+    include: {
+      ward: true,
+      beds: {
+        where: { status: "ACTIVE" },
+        orderBy: { bedCode: "asc" },
+      },
+    },
+    orderBy: [{ roomName: "asc" }],
+  });
+}
+
 export async function createWard(
   hospitalId: string,
   input: Record<string, unknown>,
@@ -535,6 +584,143 @@ export async function addIntakeOutput(
       ...input,
     }) as unknown as Prisma.IpdIntakeOutputUncheckedCreateInput,
   });
+}
+
+
+export async function getDischargeReadiness(
+  hospitalId: string,
+  admissionId: string,
+) {
+  const admission = await requireAdmission(hospitalId, admissionId);
+
+  const [
+    pendingLab,
+    pendingRadiology,
+    pendingOt,
+    pendingPharmacy,
+    openInvoices,
+  ] = await Promise.all([
+    prisma.labOrder.count({
+      where: {
+        hospitalId,
+        ipdAdmissionId: admissionId,
+        status: {
+          notIn: ["REPORTED", "CANCELLED"],
+        },
+      },
+    }),
+    prisma.radiologyOrder.count({
+      where: {
+        hospitalId,
+        ipdAdmissionId: admissionId,
+        status: {
+          notIn: ["REPORTED", "CANCELLED"],
+        },
+      },
+    }),
+    prisma.otBooking.count({
+      where: {
+        hospitalId,
+        ipdAdmissionId: admissionId,
+        status: {
+          notIn: ["COMPLETED", "CANCELLED"],
+        },
+      },
+    }),
+    prisma.pharmacyDispense.count({
+      where: {
+        hospitalId,
+        ipdAdmissionId: admissionId,
+        status: {
+          in: ["PENDING", "PARTIAL"],
+        },
+      },
+    }),
+    prisma.billingInvoice.findMany({
+      where: {
+        hospitalId,
+        ipdAdmissionId: admissionId,
+        status: {
+          notIn: ["CANCELLED", "REFUNDED"],
+        },
+      },
+      select: {
+        id: true,
+        invoiceNumber: true,
+        status: true,
+        balanceAmount: true,
+      },
+    }),
+  ]);
+
+  const billingBalance = openInvoices.reduce(
+    (total, invoice) => total + Number(invoice.balanceAmount),
+    0,
+  );
+
+  const checks = [
+    {
+      key: "laboratory",
+      label: "Laboratory",
+      ready: pendingLab === 0,
+      pending: pendingLab,
+      message:
+        pendingLab === 0
+          ? "No pending laboratory orders"
+          : `${pendingLab} laboratory order(s) are still pending`,
+    },
+    {
+      key: "radiology",
+      label: "Radiology",
+      ready: pendingRadiology === 0,
+      pending: pendingRadiology,
+      message:
+        pendingRadiology === 0
+          ? "No pending radiology orders"
+          : `${pendingRadiology} radiology order(s) are still pending`,
+    },
+    {
+      key: "operationTheatre",
+      label: "Operation Theatre",
+      ready: pendingOt === 0,
+      pending: pendingOt,
+      message:
+        pendingOt === 0
+          ? "No active OT case is pending"
+          : `${pendingOt} OT case(s) are still active`,
+    },
+    {
+      key: "pharmacy",
+      label: "Pharmacy",
+      ready: pendingPharmacy === 0,
+      pending: pendingPharmacy,
+      message:
+        pendingPharmacy === 0
+          ? "No pending pharmacy dispense"
+          : `${pendingPharmacy} pharmacy dispense(s) are pending`,
+    },
+    {
+      key: "billing",
+      label: "Billing",
+      ready: billingBalance <= 0,
+      pending: openInvoices.filter(
+        (invoice) => Number(invoice.balanceAmount) > 0,
+      ).length,
+      amount: billingBalance,
+      message:
+        billingBalance <= 0
+          ? "Billing is clear"
+          : `Outstanding balance is ₹${billingBalance.toFixed(2)}`,
+    },
+  ];
+
+  return {
+    admissionId,
+    admissionNumber: admission.admissionNumber,
+    ready: checks.every((check) => check.ready),
+    checks,
+    billingBalance,
+  };
 }
 
 export async function dischargePatient(

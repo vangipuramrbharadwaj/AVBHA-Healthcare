@@ -1,0 +1,13 @@
+import {apiRequest} from "./http";
+export type RadiologyProcedure={id:string;procedureCode:string;procedureName:string;modality:string;bodyPart?:string|null;laterality?:string|null;requiresContrast:boolean;requiresPreparation:boolean;preparationInstructions?:string|null;estimatedMinutes?:number|null;price?:string|number|null;reportTemplate?:string|null};
+export type RadiologyOrder={id:string;orderNumber:string;patientId:string;ipdAdmissionId?:string|null;priority:string;status:string;clinicalNotes?:string|null;provisionalDiagnosis?:string|null;requestedAt:string;patient:{id:string;uhid?:string|null;firstName?:string|null;middleName?:string|null;lastName?:string|null};doctor?:any;items:Array<{id:string;procedure:RadiologyProcedure;study?:{id:string;status:string;scheduledAt?:string|null;startedAt?:string|null;completedAt?:string|null;report?:{id:string;status:string;findings?:string|null;impression?:string|null;recommendations?:string|null}|null}|null;report?:any}>};
+export const radiologyDashboard=()=>apiRequest<any>("/radiology/dashboard");
+export const listRadiologyProcedures=()=>apiRequest<RadiologyProcedure[]>("/radiology/procedures");
+export const createRadiologyProcedure=(body:any)=>apiRequest<RadiologyProcedure>("/radiology/procedures",{method:"POST",body});
+export const listRadiologyOrders=()=>apiRequest<{items:RadiologyOrder[];pagination:any}>("/radiology/orders?page=1&pageSize=100");
+export const getRadiologyOrder=(id:string)=>apiRequest<RadiologyOrder>(`/radiology/orders/${id}`);
+export const scheduleRadiologyStudy=(id:string,body:any)=>apiRequest<any>(`/radiology/studies/${id}/schedule`,{method:"POST",body});
+export const updateRadiologyStudyStatus=(id:string,body:any)=>apiRequest<any>(`/radiology/studies/${id}/status`,{method:"POST",body});
+export const addRadiologyContrast=(id:string,body:any)=>apiRequest<any>(`/radiology/studies/${id}/contrast`,{method:"POST",body});
+export const saveRadiologyReport=(id:string,body:any)=>apiRequest<any>(`/radiology/studies/${id}/report`,{method:"PUT",body});
+export const updateRadiologyReportStatus=(id:string,body:any)=>apiRequest<any>(`/radiology/reports/${id}/status`,{method:"POST",body});

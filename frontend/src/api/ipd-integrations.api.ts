@@ -1,0 +1,18 @@
+import { apiRequest } from "./http";
+export type Master={id:string;[key:string]:any};
+const qp=(patientId:string)=>`?page=1&pageSize=100&patientId=${encodeURIComponent(patientId)}`;
+export const listLabTests=()=>apiRequest<Master[]>("/laboratory/tests");
+export const createLabOrder=(body:any)=>apiRequest<any>("/laboratory/orders",{method:"POST",body});
+export const listLabOrders=(id:string)=>apiRequest<any>(`/laboratory/orders${qp(id)}`);
+export const listRadiologyProcedures=()=>apiRequest<Master[]>("/radiology/procedures");
+export const createRadiologyOrder=(body:any)=>apiRequest<any>("/radiology/orders",{method:"POST",body});
+export const listRadiologyOrders=(id:string)=>apiRequest<any>(`/radiology/orders${qp(id)}`);
+export const listOtRooms=()=>apiRequest<Master[]>("/operation-theatre/rooms");
+export const listOtProcedures=()=>apiRequest<Master[]>("/operation-theatre/procedures");
+export const createOtBooking=(body:any)=>apiRequest<any>("/operation-theatre/bookings",{method:"POST",body});
+export const listOtBookings=(id:string)=>apiRequest<any>(`/operation-theatre/bookings${qp(id)}`);
+export const listPharmacyInventory=(branchId:string)=>apiRequest<Master[]>(`/pharmacy/inventory?branchId=${encodeURIComponent(branchId)}`);
+export const dispenseIpdMedicines=(body:any)=>apiRequest<any>("/pharmacy/dispenses",{method:"POST",body});
+export const listBillingServices=()=>apiRequest<Master[]>("/billing/services");
+export const createIpdInvoice=(body:any)=>apiRequest<any>("/billing/invoices",{method:"POST",body});
+export const listPatientInvoices=(id:string)=>apiRequest<any>(`/billing/invoices${qp(id)}`);

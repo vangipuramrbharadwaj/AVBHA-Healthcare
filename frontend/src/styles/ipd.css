@@ -1,0 +1,115 @@
+.ipd-page{display:flex;flex-direction:column;gap:16px;padding:22px;background:#f5f8fc;min-height:100%;color:#142a43}
+.ipd-hero{display:flex;justify-content:space-between;align-items:center;gap:24px;padding:22px 24px;border-radius:21px;background:linear-gradient(118deg,#0758aa 0%,#0875cf 58%,#14a1ca 100%);color:#fff;box-shadow:0 18px 42px rgba(5,82,157,.18)}
+.ipd-hero>div:first-child>span,.ipd-card-head>div>span,.ipd-panel-head>div>span,.ipd-modal header>div>span,.ipd-workspace-head>div:first-child>span{font-size:9px;font-weight:900;letter-spacing:.14em}
+.ipd-hero h1{margin:6px 0 6px;font-size:27px}
+.ipd-hero p{margin:0;max-width:720px;font-size:11px;line-height:1.55;color:#d8edff}
+.ipd-hero-actions,.ipd-inline-actions{display:flex;gap:9px;flex-wrap:wrap}
+.ipd-hero button,.ipd-card-head button,.ipd-inline-actions button,.ipd-form-actions button,.ipd-modal footer button,.ipd-bed-empty button{border:0;border-radius:10px;background:#fff;color:#075db5;padding:10px 14px;font-weight:800;cursor:pointer}
+.ipd-hero button.secondary{background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.35);color:#fff}
+.ipd-alert{padding:11px 14px;border-radius:11px;font-size:11px;font-weight:700}
+.ipd-alert.error{background:#fff0f0;border:1px solid #f2cece;color:#a52b2b}
+.ipd-alert.success{background:#edf9f2;border:1px solid #ccebd9;color:#1c7044}
+.ipd-main-tabs{display:flex;gap:5px;padding:5px;background:#fff;border:1px solid #dce6f1;border-radius:13px;width:max-content;max-width:100%;overflow:auto}
+.ipd-main-tabs button{border:0;background:transparent;color:#657890;border-radius:9px;padding:9px 13px;font-size:11px;font-weight:800;white-space:nowrap;cursor:pointer}
+.ipd-main-tabs button.active{background:#eaf4ff;color:#0862ba}
+.ipd-kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px}
+.ipd-kpi{padding:15px 16px;border:1px solid #dce6f1;border-radius:16px;background:#fff;box-shadow:0 6px 18px rgba(29,65,105,.035)}
+.ipd-kpi span{display:block;color:#75879d;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.05em}
+.ipd-kpi strong{display:block;margin-top:8px;font-size:24px;color:#173653}
+.ipd-kpi.good{background:linear-gradient(180deg,#fff,#f4fcf7);border-color:#d5ecde}
+.ipd-kpi.warn{background:linear-gradient(180deg,#fff,#fff9ef);border-color:#efdfbd}
+.ipd-dashboard-grid{display:grid;grid-template-columns:1.65fr 1fr;gap:13px}
+.ipd-card,.ipd-panel{background:#fff;border:1px solid #dce6f1;border-radius:18px;box-shadow:0 7px 22px rgba(29,65,105,.035);overflow:hidden}
+.ipd-card-head,.ipd-panel-head{display:flex;justify-content:space-between;align-items:flex-start;gap:15px;padding:17px 19px;border-bottom:1px solid #edf2f7}
+.ipd-card-head>div>span,.ipd-panel-head>div>span{color:#0e67bd}
+.ipd-card-head h2,.ipd-panel-head h3{margin:4px 0 0}
+.ipd-card-head h2{font-size:18px}.ipd-panel-head h3{font-size:16px}
+.ipd-card-head p,.ipd-panel-head p{margin:4px 0 0;color:#7b8ba0;font-size:10px}
+.ipd-card-head button,.ipd-inline-actions button{background:#0b68c5;color:#fff;padding:8px 11px}
+.ipd-live-list{display:flex;flex-direction:column}
+.ipd-live-list>button{display:grid;grid-template-columns:38px minmax(160px,1.3fr) minmax(130px,1fr) minmax(130px,1fr) 45px;align-items:center;gap:12px;padding:12px 18px;border:0;border-bottom:1px solid #edf2f7;background:#fff;text-align:left;cursor:pointer}
+.ipd-live-list>button:hover{background:#f7fbff}
+.ipd-avatar{width:34px;height:34px;display:grid;place-items:center;border-radius:11px;background:#e6f2ff;color:#0863bc;font-size:14px;font-weight:900}
+.ipd-live-person,.ipd-live-doctor,.ipd-live-bed{display:grid;gap:2px}
+.ipd-live-list strong{font-size:11px;color:#203953}.ipd-live-list small{font-size:9px;color:#7d8da1}
+.ipd-live-doctor>small,.ipd-live-bed>small{font-size:7px;font-weight:900;letter-spacing:.08em}
+.ipd-live-days{justify-self:end;padding:7px 8px;border-radius:8px;background:#f1f5fa;color:#62758c;font-size:10px;font-weight:900}
+.ipd-ward-capacity{display:flex;flex-direction:column;gap:15px;padding:18px}
+.ipd-ward-capacity>div>div:first-child{display:flex;justify-content:space-between;gap:15px;font-size:10px}
+.ipd-ward-capacity strong{font-size:11px}.ipd-ward-capacity span{color:#74869b}
+.ipd-progress{height:7px;margin-top:7px;background:#e5edf6;border-radius:999px;overflow:hidden}
+.ipd-progress span{display:block;height:100%;background:linear-gradient(90deg,#0a68c6,#1ea06a);border-radius:inherit}
+.ipd-empty{padding:28px;text-align:center;color:#8291a3;font-size:11px}
+.ipd-table-scroll{overflow:auto}.ipd-table{width:100%;min-width:1150px;border-collapse:collapse}
+.ipd-table th,.ipd-table td{padding:11px 13px;border-bottom:1px solid #edf2f7;text-align:left;vertical-align:middle}
+.ipd-table th{font-size:9px;color:#71849b;text-transform:uppercase;letter-spacing:.06em;background:#fbfcfe}
+.ipd-table td{font-size:10px;color:#526780}.ipd-table td strong,.ipd-table td small{display:block}.ipd-table td strong{color:#203853;font-size:11px}.ipd-table td small{margin-top:3px;color:#8190a3;font-size:9px}
+.ipd-status{display:inline-flex;border-radius:999px;padding:6px 9px;font-size:8px;font-weight:900;white-space:nowrap;background:#eaf3ff;color:#0c63b8}
+.ipd-status.active{background:#e9f6ee;color:#197846}.ipd-status.discharge_planned{background:#fff5df;color:#985d08}.ipd-status.discharged{background:#edf1f5;color:#647384}.ipd-status.cancelled{background:#fdeaea;color:#ae3636}
+.ipd-link{border:1px solid #bdd7f1;background:#fff;color:#0962b8;border-radius:8px;padding:7px 10px;font-size:9px;font-weight:800;cursor:pointer}
+.ipd-bed-filter{display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end}.ipd-bed-filter button{background:#f4f7fb;color:#657a93;border:1px solid #e0e7ef}.ipd-bed-filter button.active{background:#0b68c5;color:#fff;border-color:#0b68c5}
+.ipd-bed-board{padding:17px;display:flex;flex-direction:column;gap:18px}.ipd-ward-board{border:1px solid #e0e8f1;border-radius:15px;overflow:hidden}
+.ipd-ward-board>header{display:flex;justify-content:space-between;gap:15px;padding:11px 14px;background:#f8fbff;border-bottom:1px solid #e5edf6}.ipd-ward-board h3{margin:2px 0;font-size:13px}.ipd-ward-board header span{font-size:8px;color:#0870ca;font-weight:900}.ipd-ward-board header small{color:#8292a4;font-size:9px}
+.ipd-bed-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(195px,1fr));gap:9px;padding:12px}
+.ipd-bed-card{display:grid;grid-template-columns:30px 1fr auto;gap:8px;align-items:center;padding:11px;border:1px solid #dce6f0;border-radius:12px;background:#fff}.ipd-bed-card>div{display:grid;gap:2px}.ipd-bed-card strong{font-size:11px}.ipd-bed-card small{font-size:8px;color:#7d8da0}.ipd-bed-card>small{grid-column:2/-1}
+.ipd-bed-icon{width:28px;height:28px;display:grid;place-items:center;border-radius:8px;background:#eff5fb;color:#67809b}
+.ipd-bed-state{font-size:7px;font-weight:900;padding:5px 6px;border-radius:999px;background:#eff3f7;color:#66788d}.ipd-bed-card.available{border-color:#cbe7d6;background:#fbfffc}.ipd-bed-card.available .ipd-bed-state{background:#e4f6eb;color:#197a47}.ipd-bed-card.occupied{border-color:#f0d4d4;background:#fffafa}.ipd-bed-card.occupied .ipd-bed-state{background:#fdeaea;color:#aa3333}.ipd-bed-card.reserved .ipd-bed-state{background:#fff3d9;color:#9a620a}
+.ipd-bed-empty{padding:25px;display:grid;justify-items:center}
+.ipd-setup-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:12px;padding:16px}.ipd-setup-ward{border:1px solid #dde7f1;border-radius:14px;overflow:hidden}.ipd-setup-ward>header{display:flex;justify-content:space-between;gap:12px;padding:13px;background:#f6faff;border-bottom:1px solid #e3ebf4}.ipd-setup-ward h3{margin:2px 0}.ipd-setup-ward header span{font-size:8px;color:#0870ca;font-weight:900}.ipd-setup-ward header small{font-size:9px;color:#7b8ca0}.ipd-setup-ward header>strong{font-size:10px;color:#52708d}
+.ipd-setup-room{display:flex;justify-content:space-between;gap:12px;padding:11px 13px;border-bottom:1px solid #edf2f6}.ipd-setup-room>div:first-child{display:grid;gap:3px}.ipd-setup-room strong{font-size:10px}.ipd-setup-room small{font-size:8px;color:#8190a2}
+.ipd-bed-chips{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end}.ipd-bed-chips span{padding:4px 6px;border-radius:6px;background:#e8f5ed;color:#1c7546;font-size:7px;font-weight:800}.ipd-bed-chips span.occupied{background:#fdeaea;color:#a83535}
+.ipd-workspace-backdrop,.ipd-modal-backdrop,.ipd-mini-backdrop{position:fixed;inset:0;z-index:1000;background:rgba(7,24,44,.56);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:20px}
+.ipd-workspace{width:min(1380px,98vw);height:min(900px,94vh);display:flex;flex-direction:column;background:#f6f9fc;border-radius:22px;overflow:hidden;box-shadow:0 30px 90px rgba(4,25,51,.28)}
+.ipd-workspace-head{display:flex;justify-content:space-between;gap:20px;padding:18px 21px;background:#fff;border-bottom:1px solid #e2eaf3}.ipd-workspace-head>div:first-child>span{color:#0c66bd}.ipd-workspace-head h2{margin:3px 0;font-size:20px}.ipd-workspace-head p{margin:0;color:#75869a;font-size:10px}
+.ipd-workspace-meta{display:flex;align-items:center;gap:16px}.ipd-workspace-meta>div{display:grid;gap:2px;min-width:115px}.ipd-workspace-meta small{font-size:7px;color:#8291a3;font-weight:900}.ipd-workspace-meta strong{font-size:10px}.ipd-workspace-meta>button,.ipd-modal header>button,.ipd-mini-modal header>button{width:36px;height:36px;border:0;border-radius:10px;background:#f0f4f8;color:#435a73;font-size:21px;cursor:pointer}
+.ipd-patient-alerts{display:flex;gap:7px;flex-wrap:wrap;padding:9px 20px;background:#fff;border-bottom:1px solid #e8eef5}.ipd-patient-alerts span{padding:5px 8px;border-radius:7px;background:#eef4fa;color:#526b85;font-size:8px;font-weight:800}.ipd-patient-alerts .danger{background:#fdeaea;color:#a83232}.ipd-patient-alerts .warn{background:#fff3df;color:#95600a}
+.ipd-workspace-tabs{display:flex;gap:4px;padding:8px 12px;background:#fff;border-bottom:1px solid #e0e8f1;overflow:auto}.ipd-workspace-tabs button{border:0;background:transparent;padding:8px 11px;border-radius:8px;color:#687c94;font-size:9px;font-weight:800;white-space:nowrap;cursor:pointer}.ipd-workspace-tabs button.active{background:#e8f3ff;color:#0963ba}
+.ipd-workspace-body{flex:1;overflow:auto;padding:14px}
+.ipd-work-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.ipd-work-grid>.ipd-panel:only-child{grid-column:1/-1}
+.ipd-info-grid,.ipd-vital-snapshot,.ipd-activity-kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;padding:15px}.ipd-info-grid.two{grid-template-columns:1fr 1fr}
+.ipd-info{padding:10px;border:1px solid #e3eaf2;border-radius:10px;background:#fafcff}.ipd-info span{display:block;font-size:7px;color:#7c8da1;text-transform:uppercase;font-weight:900;letter-spacing:.05em}.ipd-info strong{display:block;margin-top:4px;font-size:10px;color:#29435f}
+.ipd-clinical-text{padding:0 15px 15px;display:grid;gap:8px}.ipd-clinical-text>div{padding:11px 12px;background:#f7faff;border-radius:10px;border:1px solid #e1eaf4}.ipd-clinical-text span{font-size:8px;color:#73869c;font-weight:800}.ipd-clinical-text p{margin:5px 0 0;font-size:10px;line-height:1.5;color:#314b67}
+.ipd-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:15px 15px 0}.ipd-field{display:flex;flex-direction:column;gap:6px;padding:0 15px;margin-top:12px}.ipd-form-grid .ipd-field{padding:0;margin:0}
+.ipd-field span{font-size:9px;color:#536a84;font-weight:800}.ipd-field input,.ipd-field select,.ipd-field textarea{width:100%;box-sizing:border-box;border:1px solid #cbd8e7;border-radius:9px;background:#fff;padding:0 10px;font:inherit;color:#203a55}.ipd-field input,.ipd-field select{height:40px}.ipd-field textarea{min-height:80px;padding-top:9px;resize:vertical}
+.ipd-form-actions{display:flex;justify-content:flex-end;padding:14px 15px}.ipd-form-actions button{background:#0b68c5;color:#fff}
+.ipd-timeline{display:flex;flex-direction:column;padding:14px}.ipd-timeline>div{display:grid;grid-template-columns:15px 1fr;gap:8px;position:relative;padding-bottom:14px}.ipd-timeline>div>span{width:8px;height:8px;border-radius:50%;background:#0e6ac5;margin-top:4px;box-shadow:0 0 0 4px #e9f3ff}.ipd-timeline>div:not(:last-child)::before{content:"";position:absolute;left:3px;top:13px;bottom:0;width:2px;background:#dce7f2}.ipd-timeline>div>div{display:grid;gap:3px}.ipd-timeline strong{font-size:10px}.ipd-timeline p{margin:0;font-size:9px;color:#657a92}.ipd-timeline small{font-size:8px;color:#8291a3}
+.ipd-record-list{display:flex;flex-direction:column;gap:9px;padding:14px;max-height:580px;overflow:auto}.ipd-record-list article{border:1px solid #e1e9f2;border-radius:11px;padding:11px;background:#fbfdff}.ipd-record-list header{display:flex;justify-content:space-between;gap:10px}.ipd-record-list header strong{font-size:10px}.ipd-record-list header span{font-size:8px;color:#7c8da0}.ipd-record-list p{margin:7px 0 0;font-size:9px;line-height:1.5;color:#4a617a}.ipd-record-list.compact{max-height:520px}
+.ipd-med-list{display:flex;flex-direction:column;gap:8px;padding:14px}.ipd-med-list>article{display:flex;justify-content:space-between;gap:15px;border:1px solid #e1eaf3;border-radius:11px;padding:11px}.ipd-med-list>article>div:first-child{display:grid;gap:3px}.ipd-med-list strong{font-size:10px}.ipd-med-list small,.ipd-med-list span{font-size:8px;color:#7c8da1}.ipd-med-admins{display:flex;align-items:center;gap:8px}.ipd-med-admins button{border:1px solid #afd0f2;background:#fff;color:#0b63b9;border-radius:8px;padding:7px 9px;font-size:8px;font-weight:800;cursor:pointer}
+.ipd-io-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:14px}.ipd-io-summary>div{padding:12px;border-radius:11px;background:#f4f7fb;border:1px solid #e0e7ef}.ipd-io-summary span{display:block;font-size:8px;color:#71849b}.ipd-io-summary strong{display:block;margin-top:5px;font-size:14px}.ipd-io-summary .intake{background:#edf7ff;border-color:#d2e8fa}.ipd-io-summary .output{background:#fff4f0;border-color:#f0dcd3}
+.ipd-discharge-form{max-width:900px;margin:0 auto}.ipd-discharge-warning{margin:14px 15px 0;padding:12px;border-radius:10px;background:#fff8e8;border:1px solid #eedba6;display:grid;gap:3px}.ipd-discharge-warning strong{font-size:9px;color:#8b5c05}.ipd-discharge-warning span{font-size:8px;color:#795f2c}.discharge-summary{max-width:900px;margin:auto}
+.ipd-modal{width:min(780px,96vw);max-height:92vh;background:#fff;border-radius:20px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 30px 90px rgba(4,25,51,.3)}.ipd-modal.admission{width:min(980px,96vw)}.ipd-modal.setup{width:min(690px,96vw)}
+.ipd-modal>header,.ipd-mini-modal>header{display:flex;justify-content:space-between;gap:15px;align-items:center;padding:17px 19px;border-bottom:1px solid #e3eaf2}.ipd-modal header span,.ipd-mini-modal header span{color:#0b66bd}.ipd-modal h2,.ipd-mini-modal h3{margin:3px 0}.ipd-modal-content{overflow:auto;padding-bottom:15px}
+.ipd-admission-section{padding:15px 18px;border-bottom:1px solid #edf2f6}.ipd-admission-section h3{margin:0 0 10px;font-size:12px;color:#2b4561}.ipd-admission-section .ipd-form-grid{padding:0}
+.ipd-patient-search{position:relative}.ipd-patient-search>.ipd-field{padding:0;margin:0}.ipd-patient-results{position:absolute;left:0;right:0;top:66px;z-index:5;max-height:240px;overflow:auto;background:#fff;border:1px solid #cad9e9;border-radius:11px;box-shadow:0 15px 40px rgba(20,48,80,.16)}.ipd-patient-results>span{display:block;padding:12px;color:#75869a;font-size:9px}.ipd-patient-results button{width:100%;display:grid;gap:2px;padding:10px 12px;border:0;border-bottom:1px solid #edf2f6;background:#fff;text-align:left;cursor:pointer}.ipd-patient-results button:hover{background:#f5faff}.ipd-patient-results strong{font-size:10px}.ipd-patient-results small{font-size:8px;color:#7d8da0}
+.ipd-selected-patient{margin-top:8px;padding:11px;border:1px solid #c8e0f7;border-radius:10px;background:#f2f8ff;display:grid;gap:2px}.ipd-selected-patient span{font-size:7px;color:#0b66bd;font-weight:900}.ipd-selected-patient strong{font-size:11px}.ipd-selected-patient small{font-size:8px;color:#74869c}
+.ipd-modal>footer{display:flex;justify-content:flex-end;align-items:center;gap:9px;padding:13px 18px;border-top:1px solid #e2eaf2;background:#fbfcfe}.ipd-modal footer>span{margin-right:auto;color:#77899d;font-size:8px}.ipd-modal footer button{background:#0b68c5;color:#fff}.ipd-modal footer button.secondary{background:#fff;border:1px solid #ccd8e5;color:#596f87}
+.ipd-mini-modal{width:min(650px,94vw);background:#fff;border-radius:17px;overflow:hidden}.ipd-mini-modal .ipd-form-grid{padding:15px}.ipd-mini-modal>.ipd-field{padding:0 15px}
+button:disabled{opacity:.55;cursor:not-allowed!important}
+@media(max-width:1180px){.ipd-kpis{grid-template-columns:repeat(3,1fr)}.ipd-dashboard-grid{grid-template-columns:1fr}.ipd-live-list>button{grid-template-columns:38px 1fr 1fr 45px}.ipd-live-bed{display:none}}
+@media(max-width:850px){.ipd-page{padding:12px}.ipd-hero{align-items:flex-start;flex-direction:column}.ipd-kpis{grid-template-columns:repeat(2,1fr)}.ipd-work-grid{grid-template-columns:1fr}.ipd-workspace{height:96vh}.ipd-workspace-head{align-items:flex-start;flex-direction:column}.ipd-workspace-meta{width:100%;flex-wrap:wrap}.ipd-info-grid,.ipd-vital-snapshot,.ipd-activity-kpis{grid-template-columns:1fr 1fr}.ipd-form-grid{grid-template-columns:1fr}.ipd-live-list>button{grid-template-columns:34px 1fr auto}.ipd-live-doctor{display:none}.ipd-setup-grid{grid-template-columns:1fr}}
+@media(max-width:560px){.ipd-kpis{grid-template-columns:1fr 1fr}.ipd-hero-actions{width:100%}.ipd-hero-actions button{flex:1}.ipd-info-grid,.ipd-vital-snapshot,.ipd-activity-kpis{grid-template-columns:1fr}.ipd-live-list>button{grid-template-columns:32px 1fr}.ipd-live-days{display:none}.ipd-workspace-backdrop,.ipd-modal-backdrop{padding:5px}.ipd-workspace{width:100%;height:99vh;border-radius:14px}.ipd-workspace-meta>div{min-width:0}.ipd-io-summary{grid-template-columns:1fr}.ipd-setup-room{flex-direction:column}.ipd-bed-chips{justify-content:flex-start}}
+.ipd-integration{display:flex;flex-direction:column;gap:12px}.ipd-integration-tabs{display:flex;gap:5px;flex-wrap:wrap;padding:5px;border:1px solid #dce6f1;border-radius:12px;background:#fff}.ipd-integration-tabs button{border:0;border-radius:8px;padding:8px 11px;background:#f2f6fa;color:#61768e;font-size:9px;font-weight:800;cursor:pointer}.ipd-integration-tabs button.active{background:#0b68c5;color:#fff}.ipd-choice-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px;padding:14px;max-height:390px;overflow:auto}.ipd-choice-grid>button{display:flex;gap:9px;align-items:center;text-align:left;padding:10px;border:1px solid #dce6f0;border-radius:11px;background:#fff;cursor:pointer}.ipd-choice-grid>button>span{width:25px;height:25px;display:grid;place-items:center;border-radius:7px;background:#edf3f9}.ipd-choice-grid>button>div{display:grid;gap:3px}.ipd-choice-grid strong{font-size:9px}.ipd-choice-grid small{font-size:8px;color:#7c8da1}.ipd-choice-grid>button.selected{border-color:#8fc0ef;background:#f2f8ff}.ipd-choice-grid>button.selected>span{background:#0b68c5;color:#fff}.ipd-bill-preview{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:14px}.ipd-bill-preview>div{padding:12px;border:1px solid #dce7f1;border-radius:10px;background:#f8fbff}.ipd-bill-preview span{display:block;font-size:8px;color:#74879d}.ipd-bill-preview strong{display:block;margin-top:5px;font-size:13px}@media(max-width:650px){.ipd-bill-preview{grid-template-columns:1fr}.ipd-choice-grid{grid-template-columns:1fr}}
+
+
+/* IPD pharmacy medicine selector */
+.ipd-medicine-search{position:relative;display:block;margin-bottom:14px}.ipd-medicine-results{position:absolute;z-index:40;left:0;right:0;top:100%;margin-top:6px;background:#fff;border:1px solid #dbe7f5;border-radius:14px;box-shadow:0 18px 45px rgba(20,52,90,.14);max-height:320px;overflow:auto;padding:6px}.ipd-medicine-results button{width:100%;border:0;background:#fff;color:#17324d;display:flex;align-items:center;justify-content:space-between;gap:16px;text-align:left;padding:11px 12px;border-radius:10px;cursor:pointer}.ipd-medicine-results button:hover{background:#f6f9fd}.ipd-medicine-results strong,.ipd-medicine-results small{display:block}.ipd-medicine-results small{margin-top:3px;color:#71839a}.ipd-medicine-results button>span{font-size:12px;color:#49647f;white-space:nowrap}.ipd-selected-medicine{display:flex;justify-content:space-between;gap:12px;align-items:center;background:#f7fbff;border:1px solid #d7e8f8;border-radius:12px;padding:10px 12px;margin:-4px 0 14px;color:#17324d}.ipd-selected-medicine span{font-size:12px;color:#60758c}
+
+.ipd-discharge-layout{display:grid;grid-template-columns:.85fr 1.15fr;gap:12px}
+.ipd-clearance-grid{display:grid;grid-template-columns:1fr;gap:8px;padding:14px}
+.ipd-clearance{display:flex;align-items:center;gap:10px;padding:11px;border:1px solid #dce6f0;border-radius:11px;background:#fff}
+.ipd-clearance>span{width:28px;height:28px;display:grid;place-items:center;border-radius:9px;font-size:12px;font-weight:900}
+.ipd-clearance>div{display:grid;gap:2px}.ipd-clearance strong{font-size:10px}.ipd-clearance small{font-size:8px;color:#71849a}
+.ipd-clearance.ready{border-color:#cfe8da;background:#fbfffc}.ipd-clearance.ready>span{background:#e5f6ec;color:#187647}
+.ipd-clearance.pending{border-color:#eed9b8;background:#fffdf8}.ipd-clearance.pending>span{background:#fff1d8;color:#956009}
+.ipd-discharge-state{margin:0 14px 14px;padding:12px;border-radius:11px;display:grid;gap:3px}.ipd-discharge-state strong{font-size:10px}.ipd-discharge-state span{font-size:8px}
+.ipd-discharge-state.ready{background:#eaf8ef;color:#1a7145}.ipd-discharge-state.pending{background:#fff3df;color:#8e5b08}
+@media(max-width:900px){.ipd-discharge-layout{grid-template-columns:1fr}}
+
+/* AVBHA unified sizing */
+.ipd-page{font-family:var(--avbha-font, Verdana,Geneva,Tahoma,sans-serif)}
+.ipd-hero h1{font-size:var(--avbha-fs-hero-title,28px)}.ipd-hero p{font-size:var(--avbha-fs-hero-copy,12px)}
+.ipd-hero>div:first-child>span,.ipd-card-head>div>span,.ipd-panel-head>div>span,.ipd-modal header>div>span,.ipd-workspace-head>div:first-child>span{font-size:var(--avbha-fs-eyebrow,10px)}
+.ipd-hero button,.ipd-card-head button,.ipd-inline-actions button,.ipd-form-actions button,.ipd-modal footer button,.ipd-bed-empty button,.ipd-main-tabs button{font-size:var(--avbha-fs-button,11px)}
+.ipd-card-head h2,.ipd-panel-head h3{font-size:var(--avbha-fs-section-title,18px)}
+.ipd-table th{font-size:var(--avbha-fs-table-head,9px)}.ipd-table td{font-size:var(--avbha-fs-table-cell,11px)}
+.ipd-field span,.ipd-form label{font-size:var(--avbha-fs-small,10px)}

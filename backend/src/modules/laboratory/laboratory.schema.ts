@@ -35,6 +35,7 @@ export const createOrderSchema = z.object({
   departmentId: z.string().uuid().optional().nullable(),
   doctorId: z.string().uuid().optional().nullable(),
   patientId: z.string().uuid(),
+  ipdAdmissionId: z.string().uuid().optional().nullable(),
   priority: z.nativeEnum(LabOrderPriority).default(LabOrderPriority.ROUTINE),
   clinicalNotes: z.string().trim().max(5000).optional().nullable(),
   testIds: z.array(z.string().uuid()).min(1),
@@ -69,8 +70,14 @@ export const resultEntrySchema = z.object({
     abnormalFlag: z.string().trim().max(20).optional().nullable(),
     critical: z.boolean().default(false),
     comments: z.string().trim().max(3000).optional().nullable(),
-  })).min(1),
-});
+  })).default([]),
+}).refine(
+  (input) => Boolean(input.interpretation?.trim()) || input.values.length > 0,
+  {
+    message: "Enter at least one result value or an interpretation",
+    path: ["values"],
+  },
+);
 
 export const resultStatusSchema = z.object({
   status: z.nativeEnum(LabResultStatus),

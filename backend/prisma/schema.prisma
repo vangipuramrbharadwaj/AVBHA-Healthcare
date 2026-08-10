@@ -1845,7 +1845,9 @@ model IpdMedicationOrder {
   id           String    @id @default(uuid()) @db.Uuid
   hospitalId   String    @map("hospital_id") @db.Uuid
   admissionId  String    @map("admission_id") @db.Uuid
+  medicineId   String?   @map("medicine_id") @db.Uuid
   medicineName String    @map("medicine_name") @db.VarChar(200)
+  prescribedQuantity Decimal? @map("prescribed_quantity") @db.Decimal(14, 3)
   dosage       String?   @db.VarChar(100)
   route        String?   @db.VarChar(50)
   frequency    String?   @db.VarChar(100)
@@ -1860,6 +1862,7 @@ model IpdMedicationOrder {
   administrations IpdMedicationAdministration[]
 
   @@index([admissionId, status])
+  @@index([medicineId])
   @@map("ipd_medication_orders")
 }
 
@@ -2018,6 +2021,7 @@ model LabOrder {
   departmentId  String?          @map("department_id") @db.Uuid
   doctorId      String?          @map("doctor_id") @db.Uuid
   patientId     String           @map("patient_id") @db.Uuid
+  ipdAdmissionId String?          @map("ipd_admission_id") @db.Uuid
   orderNumber   String           @map("order_number") @db.VarChar(40)
   priority      LabOrderPriority @default(ROUTINE)
   status        LabOrderStatus   @default(ORDERED)
@@ -2039,6 +2043,7 @@ model LabOrder {
   @@unique([hospitalId, orderNumber])
   @@index([hospitalId, orderedAt])
   @@index([patientId, orderedAt])
+  @@index([ipdAdmissionId])
   @@index([status])
   @@map("lab_orders")
 }

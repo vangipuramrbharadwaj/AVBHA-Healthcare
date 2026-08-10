@@ -108,6 +108,7 @@ export async function createOrder(
     testIds: string[];
     departmentId?: string | null;
     doctorId?: string | null;
+    ipdAdmissionId?: string | null;
     clinicalNotes?: string | null;
   },
 ) {
@@ -141,6 +142,7 @@ export async function createOrder(
         orderedBy: userId,
         ...(input.departmentId !== undefined ? { departmentId: input.departmentId } : {}),
         ...(input.doctorId !== undefined ? { doctorId: input.doctorId } : {}),
+        ...(input.ipdAdmissionId !== undefined ? { ipdAdmissionId: input.ipdAdmissionId } : {}),
         ...(input.clinicalNotes !== undefined ? { clinicalNotes: input.clinicalNotes } : {}),
         items: {
           create: tests.map((test) => ({
@@ -434,24 +436,26 @@ export async function enterResult(
       },
     });
 
-    await transaction.labResultValue.createMany({
-      data: input.values.map((value) =>
-        clean({
-          hospitalId,
-          resultId: result.id,
-          parameterId: value.parameterId,
-          numericValue: value.numericValue,
-          textValue: value.textValue,
-          booleanValue: value.booleanValue,
-          choiceValue: value.choiceValue,
-          unit: value.unit,
-          referenceRange: value.referenceRange,
-          abnormalFlag: value.abnormalFlag,
-          critical: value.critical,
-          comments: value.comments,
-        }) as Prisma.LabResultValueCreateManyInput,
-      ),
-    });
+    if (input.values.length > 0) {
+      await transaction.labResultValue.createMany({
+        data: input.values.map((value) =>
+          clean({
+            hospitalId,
+            resultId: result.id,
+            parameterId: value.parameterId,
+            numericValue: value.numericValue,
+            textValue: value.textValue,
+            booleanValue: value.booleanValue,
+            choiceValue: value.choiceValue,
+            unit: value.unit,
+            referenceRange: value.referenceRange,
+            abnormalFlag: value.abnormalFlag,
+            critical: value.critical,
+            comments: value.comments,
+          }) as Prisma.LabResultValueCreateManyInput,
+        ),
+      });
+    }
 
     await transaction.labOrderItem.update({
       where: { id: item.id },

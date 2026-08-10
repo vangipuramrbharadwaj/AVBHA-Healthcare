@@ -238,7 +238,7 @@ export default function PharmacyPage() {
         return {medicineId:item.medicineId,batchId:row.batchId,prescribedQuantity:item.prescribedQuantity?Number(item.prescribedQuantity):null,dispensedQuantity:quantity,unitPrice:Number(batch.sellingPrice),instructions:item.instructions??null};
       });
       setBusy(true);setError("");setSuccess("");
-      await dispensePrescription({branchId,patientId:dispenseItem.patient.id,opdVisitId:dispenseItem.visit.id,prescriptionId:dispenseItem.prescriptionId,items});
+      await dispensePrescription({branchId,patientId:dispenseItem.patient.id,...(dispenseItem.source==="IPD"?{ipdAdmissionId:dispenseItem.ipdAdmissionId}:{opdVisitId:dispenseItem.visit.id,prescriptionId:dispenseItem.prescriptionId}),items});
       setDispenseItem(null);setDispenseRows({});setSuccess("Medicines dispensed. Batch stock and ledger updated automatically.");await load();
     }catch(caught){setError(caught instanceof Error?caught.message:"Unable to dispense medicines")}finally{setBusy(false)}
   }
@@ -743,11 +743,11 @@ export default function PharmacyPage() {
         </>
       )}
 
-      {tab === "dispensing" && (<><div className="rx-purchase-toolbar"><div><span>LIVE PRESCRIPTION QUEUE</span><h2>Prescription & Dispensing Queue</h2><p>OPD prescriptions appear here immediately after the doctor saves a medicine.</p></div><div className="rx-queue-count"><strong>{prescriptionQueue.filter(x=>x.status!=="COMPLETED").length}</strong><span>Pending</span></div></div>
-      <div className="rx-prescription-queue">{prescriptionQueue.length===0?<div className="rx-empty"><strong>No prescriptions waiting</strong><span>New OPD prescriptions will appear automatically.</span></div>:prescriptionQueue.map(item=>{
+      {tab === "dispensing" && (<><div className="rx-purchase-toolbar"><div><span>LIVE PRESCRIPTION QUEUE</span><h2>Prescription & Dispensing Queue</h2><p>OPD prescriptions and IPD medication orders appear here immediately after the doctor saves them.</p></div><div className="rx-queue-count"><strong>{prescriptionQueue.filter(x=>x.status!=="COMPLETED").length}</strong><span>Pending</span></div></div>
+      <div className="rx-prescription-queue">{prescriptionQueue.length===0?<div className="rx-empty"><strong>No prescriptions waiting</strong><span>New OPD prescriptions and IPD medication orders will appear automatically.</span></div>:prescriptionQueue.map(item=>{
         const patient=[item.patient.firstName,item.patient.middleName,item.patient.lastName].filter(Boolean).join(" ");
         const doctor=[item.doctor.title,item.doctor.employee?.firstName??item.doctor.firstName,item.doctor.employee?.lastName??item.doctor.lastName].filter(Boolean).join(" ");
-        return <article className="rx-prescription-card" key={item.id}><div className="rx-prescription-top"><div><span>{item.visit.visitNumber}</span><h3>{patient||"Patient"}</h3><p>{item.patient.uhid||"No UHID"} · {item.patient.primaryMobile||"No mobile"}</p></div><div className="rx-prescription-doctor"><span>DOCTOR</span><strong>{doctor||item.doctor.doctorCode}</strong><small>{item.department?.departmentName||item.doctor.specialization}</small></div><span className={`rx-po-status ${item.status==="COMPLETED"?"received":""}`}>{item.status==="COMPLETED"?"DISPENSED":"PENDING"}</span></div>
+        return <article className="rx-prescription-card" key={item.id}><div className="rx-prescription-top"><div><span>{item.source==="IPD"?"IPD · ":"OPD · "}{item.visit.visitNumber}</span><h3>{patient||"Patient"}</h3><p>{item.patient.uhid||"No UHID"} · {item.patient.primaryMobile||"No mobile"}</p></div><div className="rx-prescription-doctor"><span>DOCTOR</span><strong>{doctor||item.doctor.doctorCode}</strong><small>{item.department?.departmentName||item.doctor.specialization}</small></div><span className={`rx-po-status ${item.status==="COMPLETED"?"received":""}`}>{item.status==="COMPLETED"?"DISPENSED":"PENDING"}</span></div>
         <div className="rx-prescription-items">{item.items.map(pi=><div key={pi.id}><div><strong>{pi.medicineName}</strong><small>{[pi.medicine?.genericName,pi.medicine?.dosageForm].filter(Boolean).join(" · ")||"Medicine"}</small></div><span>Dosage<b>{pi.dosage||"—"}</b></span><span>Frequency<b>{pi.frequency||"—"}</b></span><span>Qty<b>{pi.prescribedQuantity?Number(pi.prescribedQuantity):"—"}</b></span><span>Stock<b>{pi.medicine?.totalAvailable??0}</b></span></div>)}</div>
         <div className="rx-prescription-bottom"><span>Prescribed {new Date(item.createdAt).toLocaleString("en-IN")}</span>{item.status!=="COMPLETED"?<button onClick={()=>openDispense(item)}>Dispense Medicines</button>:<span className="rx-received-note">✓ Stock deducted</span>}</div></article>})}</div></>)}
 

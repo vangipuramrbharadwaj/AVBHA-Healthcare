@@ -1,6 +1,15 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import * as opd from "../api/opd.api";
 import type { OpdVisit } from "../api/opd.api";
+import {
+  createOpdLabOrder,
+  createOpdRadiologyOrder,
+  listClinicalLabTests,
+  listClinicalRadiologyProcedures,
+  type ClinicalLabTest,
+  type ClinicalRadiologyProcedure,
+} from "../api/clinical-orders.api";
+import { loadSession } from "../utils/storage";
 import "../styles/opd.css";
 
 const pname=(v?:OpdVisit|null)=>[v?.patient?.firstName,v?.patient?.middleName,v?.patient?.lastName].filter(Boolean).join(" ")||"Patient";
@@ -120,7 +129,40 @@ export default function OpdPage(){
      {tab==="consultation"&&<Consult disabled={busy} initial={selected.consultation} save={x=>run(()=>opd.saveOpdConsultation(selected.id,x),"Consultation saved")}/>}
      {tab==="diagnosis"&&<Diagnosis disabled={busy} rows={selected.diagnoses??[]} save={x=>run(()=>opd.addOpdDiagnosis(selected.id,x),"Diagnosis added")}/>}
      {tab==="prescription"&&<Prescription disabled={busy} rows={selected.prescription?.items??[]} save={x=>run(()=>opd.createOpdPrescription(selected.id,x),"Prescription saved")}/>}
-     {tab==="orders"&&<Orders disabled={busy} rows={selected.orders??[]} save={x=>run(()=>opd.addOpdOrder(selected.id,x),"Order added")}/>}
+     {tab==="orders"&&<Orders
+       disabled={busy}
+       visit={selected}
+       rows={selected.orders??[]}
+       save={x=>run(async()=>{
+         const branchId=loadSession()?.user.branchId;
+         if(!branchId) throw new Error("Select a branch before creating an investigation order.");
+         if(x.orderType==="LABORATORY"){
+           await createOpdLabOrder({
+             branchId,
+             departmentId:selected.department?.id??null,
+             doctorId:selected.doctor.id,
+             patientId:selected.patient.id,
+             priority:x.priority==="EMERGENCY"?"STAT":x.priority==="URGENT"?"URGENT":"ROUTINE",
+             clinicalNotes:x.instructions??null,
+             testIds:[x.masterId],
+           });
+         }else if(x.orderType==="RADIOLOGY"){
+           await createOpdRadiologyOrder({
+             branchId,
+             departmentId:selected.department?.id??null,
+             doctorId:selected.doctor.id,
+             patientId:selected.patient.id,
+             opdVisitId:selected.id,
+             priority:x.priority==="EMERGENCY"?"STAT":x.priority==="URGENT"?"URGENT":"ROUTINE",
+             clinicalNotes:x.instructions??null,
+             provisionalDiagnosis:selected.diagnoses?.[0]?.diagnosisName??null,
+             requestedProcedureIds:[x.masterId],
+           });
+         }else{
+           await opd.addOpdOrder(selected.id,x);
+         }
+       },"Investigation order sent to department queue")}
+      />}
      {tab==="followup"&&<Follow disabled={busy} rows={selected.followUps??[]} save={x=>run(()=>opd.addOpdFollowUp(selected.id,x),"Follow-up added")}/>}
     </>}
    </main>
@@ -608,5 +650,162 @@ function Prescription({save,disabled,rows}:{save:(x:any)=>void;disabled:boolean;
   </form>
 }
 
-function Orders({save,disabled,rows}:{save:(x:any)=>void;disabled:boolean;rows:any[]}){const submit=(e:FormEvent<HTMLFormElement>)=>{e.preventDefault();const f=e.currentTarget;save({orderType:value(f,"orderType"),orderName:value(f,"orderName"),priority:value(f,"priority"),instructions:value(f,"instructions")||null})};return <form className="opd-panel" onSubmit={submit}><h3>Clinical Orders</h3><Records rows={rows} label={x=>`${x.orderType} · ${x.orderName}`}/><div className="opd-form"><label><span>Type</span><select name="orderType"><option>LABORATORY</option><option>RADIOLOGY</option><option>PROCEDURE</option><option>OTHER</option></select></label><label><span>Priority</span><select name="priority"><option>NORMAL</option><option>URGENT</option><option>EMERGENCY</option></select></label><label className="wide"><span>Test / procedure *</span><input required name="orderName"/></label></div><label><span>Instructions</span><textarea name="instructions"/></label><button disabled={disabled}>Create Order</button></form>}
+function Orders({
+  save,
+  disabled,
+  rows,
+}: {
+  visit: OpdVisit;
+  save: (x: any) => void;
+  disabled: boolean;
+  rows: any[];
+}) {
+  const [orderType, setOrderType] = useState("LABORATORY");
+  const [labTests, setLabTests] = useState<ClinicalLabTest[]>([]);
+  const [radiology, setRadiology] = useState<ClinicalRadiologyProcedure[]>([]);
+  const [masterId, setMasterId] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    Promise.all([
+      listClinicalLabTests(),
+      listClinicalRadiologyProcedures(),
+    ])
+      .then(([lab, rad]) => {
+        if (!cancelled) {
+          setLabTests(lab);
+          setRadiology(rad);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const masters =
+    orderType === "LABORATORY"
+      ? labTests.map((x) => ({
+          id: x.id,
+          label: x.testName,
+          meta: `${x.sampleType}${x.category ? ` · ${x.category}` : ""}`,
+        }))
+      : orderType === "RADIOLOGY"
+        ? radiology.map((x) => ({
+            id: x.id,
+            label: x.procedureName,
+            meta: `${x.modality}${x.bodyPart ? ` · ${x.bodyPart}` : ""}`,
+          }))
+        : [];
+
+  const submit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const f = e.currentTarget;
+    if (
+      (orderType === "LABORATORY" || orderType === "RADIOLOGY") &&
+      !masterId
+    ) {
+      return;
+    }
+    const selectedMaster = masters.find((x) => x.id === masterId);
+    save({
+      orderType,
+      masterId,
+      orderName:
+        selectedMaster?.label ||
+        value(f, "orderName") ||
+        orderType,
+      priority: value(f, "priority"),
+      instructions: value(f, "instructions") || null,
+    });
+  };
+
+  return (
+    <form className="opd-panel" onSubmit={submit}>
+      <div className="opd-panel-title">
+        <div>
+          <span>CONNECTED INVESTIGATIONS</span>
+          <h3>Clinical Orders</h3>
+        </div>
+        <strong>OPD → Department Queue</strong>
+      </div>
+
+      <Records rows={rows} label={(x) => `${x.orderType} · ${x.orderName}`} />
+
+      <div className="opd-form">
+        <label>
+          <span>Type</span>
+          <select
+            name="orderType"
+            value={orderType}
+            onChange={(e) => {
+              setOrderType(e.target.value);
+              setMasterId("");
+            }}
+          >
+            <option value="LABORATORY">Laboratory</option>
+            <option value="RADIOLOGY">Radiology</option>
+            <option value="PROCEDURE">Procedure / Other</option>
+          </select>
+        </label>
+
+        <label>
+          <span>Priority</span>
+          <select name="priority">
+            <option>NORMAL</option>
+            <option>URGENT</option>
+            <option>EMERGENCY</option>
+          </select>
+        </label>
+
+        {(orderType === "LABORATORY" || orderType === "RADIOLOGY") ? (
+          <label className="wide">
+            <span>
+              {orderType === "LABORATORY" ? "Lab test" : "Imaging procedure"} *
+            </span>
+            <select
+              value={masterId}
+              onChange={(e) => setMasterId(e.target.value)}
+              required
+            >
+              <option value="">
+                {loading ? "Loading..." : "Select from master"}
+              </option>
+              {masters.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.label} · {item.meta}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : (
+          <label className="wide">
+            <span>Procedure / order *</span>
+            <input required name="orderName" />
+          </label>
+        )}
+      </div>
+
+      <label>
+        <span>Clinical instructions</span>
+        <textarea name="instructions" />
+      </label>
+
+      <button
+        disabled={
+          disabled ||
+          ((orderType === "LABORATORY" || orderType === "RADIOLOGY") &&
+            !masterId)
+        }
+      >
+        Send to {orderType === "LABORATORY" ? "Laboratory" : orderType === "RADIOLOGY" ? "Radiology" : "Orders"}
+      </button>
+    </form>
+  );
+}
+
 function Follow({save,disabled,rows}:{save:(x:any)=>void;disabled:boolean;rows:any[]}){const submit=(e:FormEvent<HTMLFormElement>)=>{e.preventDefault();const f=e.currentTarget;save({followUpDate:value(f,"followUpDate"),reason:value(f,"reason")||null,notes:value(f,"notes")||null})};return <form className="opd-panel" onSubmit={submit}><h3>Follow-up</h3><Records rows={rows} label={x=>`${String(x.followUpDate??"").slice(0,10)} · ${x.reason??"Follow-up"}`}/><div className="opd-form"><label><span>Date *</span><input required type="date" name="followUpDate"/></label><label><span>Reason</span><input name="reason"/></label></div><label><span>Notes</span><textarea name="notes"/></label><button disabled={disabled}>Add Follow-up</button></form>}

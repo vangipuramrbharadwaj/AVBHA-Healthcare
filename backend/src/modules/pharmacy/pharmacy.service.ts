@@ -561,56 +561,44 @@ export async function createSale(
 }
 
 export async function listPrescriptionQueue(hospitalId: string,branchId?: string) {
-  const prescriptions = await prisma.opdPrescription.findMany({
-    where: {
-      hospitalId,
-      visit: { deletedAt: null, ...(branchId?{branchId}:{}) },
-      items: { some: { medicineId: { not: null } } },
-    },
-    include: {
-      visit: { include: { patient:true, doctor:{include:{employee:true}}, department:true } },
-      items: {
-        include: {
-          medicine: {
-            include: {
-              batches: {
-                where: { status:"ACTIVE", expiryDate:{gte:new Date()}, availableQuantity:{gt:0}, ...(branchId?{branchId}:{}) },
-                orderBy: [{expiryDate:"asc"},{createdAt:"asc"}],
-              },
-            },
-          },
-        },
-        orderBy:{createdAt:"asc"},
-      },
-    },
-    orderBy:{updatedAt:"desc"}, take:200,
+  const [prescriptions, ipdOrders] = await Promise.all([
+    prisma.opdPrescription.findMany({
+      where: { hospitalId, visit: { deletedAt: null, ...(branchId?{branchId}:{}) }, items: { some: { medicineId: { not: null } } } },
+      include: {
+        visit: { include: { patient:true, doctor:{include:{employee:true}}, department:true } },
+        items: { include: { medicine: { include: { batches: { where: { status:"ACTIVE", expiryDate:{gte:new Date()}, availableQuantity:{gt:0}, ...(branchId?{branchId}:{}) }, orderBy: [{expiryDate:"asc"},{createdAt:"asc"}] } } } }, orderBy:{createdAt:"asc"} },
+      }, orderBy:{updatedAt:"desc"}, take:200,
+    }),
+    prisma.ipdMedicationOrder.findMany({
+      where: { hospitalId, medicineId:{not:null}, admission:{status:{in:["ACTIVE","DISCHARGE_PLANNED"]}, ...(branchId?{branchId}:{})} },
+      include: { admission:{include:{patient:true,doctor:{include:{employee:true}},department:true}} },
+      orderBy:{orderedAt:"desc"}, take:200,
+    }),
+  ]);
+  const prescriptionIds=prescriptions.map(p=>p.id);
+  const admissionIds=[...new Set(ipdOrders.map(o=>o.admissionId))];
+  const dispenses=await prisma.pharmacyDispense.findMany({
+    where:{hospitalId,OR:[...(prescriptionIds.length?[{prescriptionId:{in:prescriptionIds}}]:[]),...(admissionIds.length?[{ipdAdmissionId:{in:admissionIds}}]:[])]},
+    include:{items:true},orderBy:{createdAt:"desc"},
   });
-  const ids=prescriptions.map((p)=>p.id);
-  const dispenses=ids.length?await prisma.pharmacyDispense.findMany({
-    where:{hospitalId,prescriptionId:{in:ids}}, orderBy:{createdAt:"desc"},
-  }):[];
-  const latest=new Map<string,(typeof dispenses)[number]>();
-  for(const d of dispenses){if(d.prescriptionId&&!latest.has(d.prescriptionId))latest.set(d.prescriptionId,d);}
-  return prescriptions.map((prescription)=>{
-    const dispense=latest.get(prescription.id)??null;
-    return {
-      id:prescription.id,prescriptionId:prescription.id,createdAt:prescription.createdAt,
-      notes:prescription.notes,status:dispense?.status??"PENDING",
-      visit:{id:prescription.visit.id,visitNumber:prescription.visit.visitNumber,visitDate:prescription.visit.visitDate},
-      patient:prescription.visit.patient,doctor:prescription.visit.doctor,department:prescription.visit.department,
-      items:prescription.items.map((item)=>({
-        id:item.id,medicineId:item.medicineId,medicineName:item.medicineName,dosage:item.dosage,
-        frequency:item.frequency,durationDays:item.durationDays,prescribedQuantity:item.prescribedQuantity,
-        instructions:item.instructions,
-        medicine:item.medicine?{
-          id:item.medicine.id,medicineCode:item.medicine.medicineCode,brandName:item.medicine.brandName,
-          genericName:item.medicine.genericName,strength:item.medicine.strength,dosageForm:item.medicine.dosageForm,
-          totalAvailable:item.medicine.batches.reduce((t,b)=>t+Number(b.availableQuantity),0),
-          batches:item.medicine.batches.map((b)=>({id:b.id,batchNumber:b.batchNumber,expiryDate:b.expiryDate,availableQuantity:b.availableQuantity,sellingPrice:b.sellingPrice,rackLocation:b.rackLocation})),
-        }:null,
-      })),
-    };
-  });
+  const latestRx=new Map<string,(typeof dispenses)[number]>();
+  for(const d of dispenses){if(d.prescriptionId&&!latestRx.has(d.prescriptionId))latestRx.set(d.prescriptionId,d);}
+  const dispensedIpdOrderIds=new Set<string>();
+  for(const d of dispenses){for(const i of d.items){dispensedIpdOrderIds.add(`${d.ipdAdmissionId}:${i.medicineId}`)}}
+  const opd=prescriptions.map(p=>({
+    id:p.id,source:"OPD",prescriptionId:p.id,ipdAdmissionId:null,createdAt:p.createdAt,notes:p.notes,status:latestRx.get(p.id)?.status??"PENDING",
+    visit:{id:p.visit.id,visitNumber:p.visit.visitNumber,visitDate:p.visit.visitDate},patient:p.visit.patient,doctor:p.visit.doctor,department:p.visit.department,
+    items:p.items.map(item=>({id:item.id,medicineId:item.medicineId,medicineName:item.medicineName,dosage:item.dosage,frequency:item.frequency,durationDays:item.durationDays,prescribedQuantity:item.prescribedQuantity,instructions:item.instructions,medicine:item.medicine?{id:item.medicine.id,medicineCode:item.medicine.medicineCode,brandName:item.medicine.brandName,genericName:item.medicine.genericName,strength:item.medicine.strength,dosageForm:item.medicine.dosageForm,totalAvailable:item.medicine.batches.reduce((t,b)=>t+Number(b.availableQuantity),0),batches:item.medicine.batches.map(b=>({id:b.id,batchNumber:b.batchNumber,expiryDate:b.expiryDate,availableQuantity:b.availableQuantity,sellingPrice:b.sellingPrice,rackLocation:b.rackLocation}))}:null})),
+  }));
+  const medicineIds=[...new Set(ipdOrders.map(o=>o.medicineId).filter((x):x is string=>!!x))];
+  const medicines=medicineIds.length?await prisma.pharmacyMedicine.findMany({where:{hospitalId,id:{in:medicineIds}},include:{batches:{where:{status:"ACTIVE",expiryDate:{gte:new Date()},availableQuantity:{gt:0},...(branchId?{branchId}:{})},orderBy:[{expiryDate:"asc"},{createdAt:"asc"}]}}}):[];
+  const medMap=new Map(medicines.map(m=>[m.id,m]));
+  const ipd=ipdOrders.map(o=>{const m=o.medicineId?medMap.get(o.medicineId):undefined; const done=!!o.medicineId&&dispensedIpdOrderIds.has(`${o.admissionId}:${o.medicineId}`); return {
+    id:o.id,source:"IPD",prescriptionId:null,ipdAdmissionId:o.admissionId,createdAt:o.orderedAt,notes:o.instructions,status:done?"COMPLETED":"PENDING",
+    visit:{id:o.admission.id,visitNumber:o.admission.admissionNumber,visitDate:o.admission.admissionDate},patient:o.admission.patient,doctor:o.admission.doctor,department:o.admission.department,
+    items:[{id:o.id,medicineId:o.medicineId,medicineName:o.medicineName,dosage:o.dosage,frequency:o.frequency,durationDays:null,prescribedQuantity:o.prescribedQuantity,instructions:o.instructions,medicine:m?{id:m.id,medicineCode:m.medicineCode,brandName:m.brandName,genericName:m.genericName,strength:m.strength,dosageForm:m.dosageForm,totalAvailable:m.batches.reduce((t,b)=>t+Number(b.availableQuantity),0),batches:m.batches.map(b=>({id:b.id,batchNumber:b.batchNumber,expiryDate:b.expiryDate,availableQuantity:b.availableQuantity,sellingPrice:b.sellingPrice,rackLocation:b.rackLocation}))}:null}],
+  }});
+  return [...ipd,...opd].sort((a,b)=>new Date(b.createdAt).getTime()-new Date(a.createdAt).getTime());
 }
 
 export async function createDispense(

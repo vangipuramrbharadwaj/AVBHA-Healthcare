@@ -3,6 +3,67 @@ import { successResponse } from "../../shared/http/api-response";
 import * as schema from "./ipd.schema";
 import * as service from "./ipd.service";
 
+export async function listWardsController(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const branchId =
+      typeof req.query.branchId === "string" && req.query.branchId
+        ? req.query.branchId
+        : undefined;
+
+    const result = await service.listWards(
+      req.auth!.hospitalId,
+      branchId,
+    );
+
+    res.json(
+      successResponse(
+        result,
+        "Wards retrieved successfully",
+        req.requestId,
+      ),
+    );
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function listRoomsController(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const branchId =
+      typeof req.query.branchId === "string" && req.query.branchId
+        ? req.query.branchId
+        : undefined;
+    const wardId =
+      typeof req.query.wardId === "string" && req.query.wardId
+        ? req.query.wardId
+        : undefined;
+
+    const result = await service.listRooms(
+      req.auth!.hospitalId,
+      branchId,
+      wardId,
+    );
+
+    res.json(
+      successResponse(
+        result,
+        "Rooms retrieved successfully",
+        req.requestId,
+      ),
+    );
+  } catch (error) {
+    next(error);
+  }
+}
+
 export async function createWardController(req: Request, res: Response, next: NextFunction) {
   try {
     const result = await service.createWard(
@@ -205,4 +266,28 @@ export async function dischargePatientController(req: Request, res: Response, ne
     );
     res.json(successResponse(result, "Patient discharged successfully", req.requestId));
   } catch (error) { next(error); }
+}
+
+
+export async function getDischargeReadinessController(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const { id } = schema.idParamsSchema.parse(req.params);
+    const result = await service.getDischargeReadiness(
+      req.auth!.hospitalId,
+      id,
+    );
+    res.json(
+      successResponse(
+        result,
+        "Discharge readiness retrieved successfully",
+        req.requestId,
+      ),
+    );
+  } catch (error) {
+    next(error);
+  }
 }

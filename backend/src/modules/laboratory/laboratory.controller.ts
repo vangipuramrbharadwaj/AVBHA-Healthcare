@@ -56,6 +56,7 @@ export async function createOrderController(req: Request, res: Response, next: N
         testIds: input.testIds,
         ...(input.departmentId !== undefined ? { departmentId: input.departmentId } : {}),
         ...(input.doctorId !== undefined ? { doctorId: input.doctorId } : {}),
+        ...(input.ipdAdmissionId !== undefined ? { ipdAdmissionId: input.ipdAdmissionId } : {}),
         ...(input.clinicalNotes !== undefined ? { clinicalNotes: input.clinicalNotes } : {}),
       },
     );

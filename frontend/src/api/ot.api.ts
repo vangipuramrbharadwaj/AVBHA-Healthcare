@@ -1,0 +1,16 @@
+import {apiRequest} from "./http";
+export type OtRoom={id:string;branchId:string;roomCode:string;roomName:string;floor?:string|null;roomType?:string|null;status:string};
+export type OtProcedure={id:string;procedureCode:string;procedureName:string;speciality?:string|null;estimatedMinutes?:number|null;baseCharge?:string|number|null;defaultAnaesthesiaType?:string|null;status?:string};
+export type OtBooking={id:string;bookingNumber:string;patientId:string;ipdAdmissionId?:string|null;priority:string;status:string;scheduledStart:string;scheduledEnd:string;actualStart?:string|null;actualEnd?:string|null;preOperativeDiagnosis?:string|null;postOperativeDiagnosis?:string|null;patient:any;room:OtRoom;procedure:OtProcedure;team?:any[];checklist?:any[];consents?:any[];anaesthesiaAssessment?:any;intraoperativeNotes?:any[];consumables?:any[];implants?:any[];specimens?:any[];recoveryRecords?:any[];complications?:any[]};
+export const otDashboard=()=>apiRequest<any>("/operation-theatre/dashboard");
+export const listOtRooms=()=>apiRequest<OtRoom[]>("/operation-theatre/rooms");
+export const createOtRoom=(body:any)=>apiRequest<OtRoom>("/operation-theatre/rooms",{method:"POST",body});
+export const listOtProcedures=()=>apiRequest<OtProcedure[]>("/operation-theatre/procedures");
+export const createOtProcedure=(body:any)=>apiRequest<OtProcedure>("/operation-theatre/procedures",{method:"POST",body});
+export const listOtBookings=()=>apiRequest<{items:OtBooking[];pagination:any}>("/operation-theatre/bookings?page=1&pageSize=100");
+export const getOtBooking=(id:string)=>apiRequest<OtBooking>(`/operation-theatre/bookings/${id}`);
+export const updateOtBookingStatus=(id:string,body:any)=>apiRequest<any>(`/operation-theatre/bookings/${id}/status`,{method:"POST",body});
+export const addOtChecklist=(id:string,body:any)=>apiRequest<any>(`/operation-theatre/bookings/${id}/checklist`,{method:"POST",body});
+export const saveOtAnaesthesia=(id:string,body:any)=>apiRequest<any>(`/operation-theatre/bookings/${id}/anaesthesia-assessment`,{method:"PUT",body});
+export const addOtIntraoperativeNote=(id:string,body:any)=>apiRequest<any>(`/operation-theatre/bookings/${id}/intraoperative-notes`,{method:"POST",body});
+export const addOtRecovery=(id:string,body:any)=>apiRequest<any>(`/operation-theatre/bookings/${id}/recovery`,{method:"POST",body});

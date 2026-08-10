@@ -1,0 +1,13 @@
+import {apiRequest} from "./http";
+export type BillingService={id:string;serviceCode:string;serviceName:string;moduleCode:string;description?:string|null;basePrice:string|number;gstPercent?:string|number|null;discountAllowed:boolean;status?:string};
+export type BillingInvoice={id:string;invoiceNumber:string;patientId:string;ipdAdmissionId?:string|null;status:string;invoiceDate:string;dueDate?:string|null;subtotal:string|number;taxAmount:string|number;discountAmount:string|number;totalAmount:string|number;paidAmount:string|number;balanceAmount:string|number;notes?:string|null;patient:{id:string;uhid?:string|null;firstName?:string|null;middleName?:string|null;lastName?:string|null};items:Array<any>;payments:Array<any>;refunds:Array<any>};
+export const billingDashboard=()=>apiRequest<any>("/billing/dashboard");
+export const listBillingServices=()=>apiRequest<BillingService[]>("/billing/services");
+export const createBillingService=(body:any)=>apiRequest<BillingService>("/billing/services",{method:"POST",body});
+export const listBillingInvoices=()=>apiRequest<{items:BillingInvoice[];pagination:any}>("/billing/invoices?page=1&pageSize=100");
+export const getBillingInvoice=(id:string)=>apiRequest<BillingInvoice>(`/billing/invoices/${id}`);
+export const recordBillingPayment=(id:string,body:any)=>apiRequest<any>(`/billing/invoices/${id}/payments`,{method:"POST",body});
+export const createBillingAdvance=(body:any)=>apiRequest<any>("/billing/advances",{method:"POST",body});
+export const requestBillingRefund=(id:string,body:any)=>apiRequest<any>(`/billing/invoices/${id}/refunds`,{method:"POST",body});
+export const cancelBillingInvoice=(id:string,body:any)=>apiRequest<any>(`/billing/invoices/${id}/cancel`,{method:"POST",body});
+export const patientBillingLedger=(patientId:string)=>apiRequest<any>(`/billing/patient-ledger?patientId=${encodeURIComponent(patientId)}&page=1&pageSize=100`);

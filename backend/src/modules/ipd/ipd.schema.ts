@@ -94,7 +94,9 @@ export const doctorRoundSchema = z.object({
 });
 
 export const medicationSchema = z.object({
+  medicineId: z.string().uuid(),
   medicineName: z.string().trim().min(2).max(200),
+  prescribedQuantity: z.coerce.number().positive().optional().nullable(),
   dosage: z.string().trim().max(100).optional().nullable(),
   route: z.string().trim().max(50).optional().nullable(),
   frequency: z.string().trim().max(100).optional().nullable(),
