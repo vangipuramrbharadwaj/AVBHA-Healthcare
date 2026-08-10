@@ -28,6 +28,7 @@ import DepartmentsPage from "../pages/DepartmentsPage";
 import UsersPage from "../pages/UsersPage";
 import RolesPermissionsPage from "../pages/RolesPermissionsPage";
 import SettingsPage from "../pages/SettingsPage";
+import ReportsPage from "../pages/ReportsPage";
 
 
 
@@ -57,7 +58,7 @@ export function AppRouter(){
             <Route path="inventory/*" element={<PermissionRoute permission="inventory.view"><InventoryPage /></PermissionRoute>}/>
             <Route path="billing/*" element={<PermissionRoute permission="billing.view"><BillingPage /></PermissionRoute>}/>
             <Route path="operation-theatre/*" element={<PermissionRoute permission="operation_theatre.view"><OperationTheatrePage /></PermissionRoute>}/>
-            <Route path="reports/*" element={modulePage("reports.view","Reports & MIS","Operational reports, analytics and management information.")}/>
+            <Route path="reports/*" element={<PermissionRoute permission="reports.view"><ReportsPage /></PermissionRoute>}/>
             <Route path="notifications/*" element={<ModulePlaceholderPage title="Notifications" description="In-app alerts and communication centre."/>}/>
             <Route path="employees/*" element={<PermissionRoute permission="employees.view"><EmployeesPage /></PermissionRoute>}/>
             <Route path="doctors/*" element={<PermissionRoute permission="doctors.view"><DoctorsPage /></PermissionRoute>} />

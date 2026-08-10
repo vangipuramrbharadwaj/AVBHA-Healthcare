@@ -18,7 +18,10 @@
     "audit:release": "node scripts/audit-release-gate.mjs",
     "verify:static": "prisma validate && prisma generate && tsc --noEmit && node scripts/audit-release-gate.mjs",
     "verify": "npm run verify:static && npm run test:unit:all",
-    "release:gate": "bash ./release-gate.sh"
+    "release:gate": "bash ./release-gate.sh",
+    "db:backup": "bash ./scripts/backup-database.sh",
+    "db:restore": "bash ./scripts/restore-database.sh",
+    "onprem:check": "bash ./scripts/onprem-readiness.sh"
   },
   "dependencies": {
     "@prisma/client": "^6.0.0",
