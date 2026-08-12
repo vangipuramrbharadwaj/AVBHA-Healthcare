@@ -3,6 +3,12 @@ import { authenticate } from "../../middleware/auth.middleware";
 import { requirePermission } from "../../middleware/permission.middleware";
 import { enforceTenant } from "../../middleware/tenant.middleware";
 import {
+  syncChargesController,
+  listRefundsController,
+  listChargesController,
+  listAdvancesController,
+  createInvoiceFromChargesController,
+  applyAdvanceController,
   cancelInvoiceController,
   createAdvanceController,
   createInvoiceController,
@@ -91,4 +97,41 @@ billingRouter.get(
   "/patient-ledger",
   requirePermission(BILLING_PERMISSIONS.VIEW),
   patientLedgerController,
+);
+
+
+billingRouter.post(
+  "/charges/sync",
+  requirePermission(BILLING_PERMISSIONS.CREATE),
+  syncChargesController,
+);
+
+billingRouter.get(
+  "/charges",
+  requirePermission(BILLING_PERMISSIONS.VIEW),
+  listChargesController,
+);
+
+billingRouter.post(
+  "/invoices/from-charges",
+  requirePermission(BILLING_PERMISSIONS.CREATE),
+  createInvoiceFromChargesController,
+);
+
+billingRouter.get(
+  "/advances",
+  requirePermission(BILLING_PERMISSIONS.VIEW),
+  listAdvancesController,
+);
+
+billingRouter.post(
+  "/invoices/:id/apply-advance",
+  requirePermission(BILLING_PERMISSIONS.CREATE),
+  applyAdvanceController,
+);
+
+billingRouter.get(
+  "/refunds",
+  requirePermission(BILLING_PERMISSIONS.VIEW),
+  listRefundsController,
 );

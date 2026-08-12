@@ -90,3 +90,31 @@ export const patientLedgerQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(50),
 });
+
+
+export const billingChargeListSchema = z.object({
+  status: z.enum(["PENDING", "INVOICED", "CANCELLED"]).default("PENDING"),
+  patientId: z.string().uuid().optional(),
+  ipdAdmissionId: z.string().uuid().optional(),
+  opdVisitId: z.string().uuid().optional(),
+});
+
+export const invoiceFromChargesSchema = z.object({
+  chargeIds: z.array(z.string().uuid()).min(1),
+  discountAmount: z.coerce.number().min(0).default(0),
+  roundOffAmount: z.coerce.number().default(0),
+  notes: z.string().trim().max(5000).optional().nullable(),
+});
+
+export const advanceListSchema = z.object({
+  patientId: z.string().uuid().optional(),
+  availableOnly: z.coerce.boolean().default(false),
+});
+
+export const applyAdvanceSchema = z.object({
+  amount: z.coerce.number().positive().optional(),
+});
+
+export const refundListSchema = z.object({
+  status: z.nativeEnum(BillingRefundStatus).optional(),
+});

@@ -8,6 +8,7 @@ import {
 } from "@prisma/client";
 import { prisma } from "../../database/prisma";
 import { AppError } from "../../shared/errors/app-error";
+import { syncCharges } from "../billing/billing.service";
 
 function clean<T extends Record<string, unknown>>(value: T): T {
   return Object.fromEntries(
@@ -591,13 +592,16 @@ export async function getDischargeReadiness(
   hospitalId: string,
   admissionId: string,
 ) {
+
   const admission = await requireAdmission(hospitalId, admissionId);
+  await syncCharges(hospitalId, admission.createdBy ?? undefined);
 
   const [
     pendingLab,
     pendingRadiology,
     pendingOt,
     pendingPharmacy,
+    pendingBillingCharges,
     openInvoices,
   ] = await Promise.all([
     prisma.labOrder.count({
@@ -634,6 +638,13 @@ export async function getDischargeReadiness(
         status: {
           in: ["PENDING", "PARTIAL"],
         },
+      },
+    }),
+    prisma.billingCharge.count({
+      where: {
+        hospitalId,
+        ipdAdmissionId: admissionId,
+        status: "PENDING",
       },
     }),
     prisma.billingInvoice.findMany({
@@ -702,15 +713,19 @@ export async function getDischargeReadiness(
     {
       key: "billing",
       label: "Billing",
-      ready: billingBalance <= 0,
-      pending: openInvoices.filter(
-        (invoice) => Number(invoice.balanceAmount) > 0,
-      ).length,
+      ready: billingBalance <= 0 && pendingBillingCharges === 0,
+      pending:
+        pendingBillingCharges +
+        openInvoices.filter(
+          (invoice) => Number(invoice.balanceAmount) > 0,
+        ).length,
       amount: billingBalance,
       message:
-        billingBalance <= 0
-          ? "Billing is clear"
-          : `Outstanding balance is ₹${billingBalance.toFixed(2)}`,
+        pendingBillingCharges > 0
+          ? `${pendingBillingCharges} charge(s) are waiting to be invoiced`
+          : billingBalance <= 0
+            ? "Billing is clear"
+            : `Outstanding balance is ₹${billingBalance.toFixed(2)}`,
     },
   ];
 

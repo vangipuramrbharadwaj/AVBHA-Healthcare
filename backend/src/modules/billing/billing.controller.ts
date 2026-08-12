@@ -420,3 +420,166 @@ export async function dashboardController(
     next(error);
   }
 }
+
+
+export async function syncChargesController(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const result = await service.syncCharges(
+      req.auth!.hospitalId,
+      req.auth!.userId,
+    );
+    res.json(
+      successResponse(
+        result,
+        "Billing charges synchronized successfully",
+        req.requestId,
+      ),
+    );
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function listChargesController(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const query = schema.billingChargeListSchema.parse(req.query);
+    const result = await service.listCharges(
+      req.auth!.hospitalId,
+      {
+        status: query.status,
+        ...(query.patientId ? { patientId: query.patientId } : {}),
+        ...(query.ipdAdmissionId
+          ? { ipdAdmissionId: query.ipdAdmissionId }
+          : {}),
+        ...(query.opdVisitId
+          ? { opdVisitId: query.opdVisitId }
+          : {}),
+      },
+    );
+
+    res.json(
+      successResponse(
+        result,
+        "Billing charges retrieved successfully",
+        req.requestId,
+      ),
+    );
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function createInvoiceFromChargesController(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const input = schema.invoiceFromChargesSchema.parse(req.body);
+    const result = await service.createInvoiceFromCharges(
+      req.auth!.hospitalId,
+      req.auth!.userId,
+      {
+        chargeIds: input.chargeIds,
+        discountAmount: input.discountAmount,
+        roundOffAmount: input.roundOffAmount,
+        ...(input.notes !== undefined
+          ? { notes: input.notes }
+          : {}),
+      },
+    );
+
+    res.status(201).json(
+      successResponse(
+        result,
+        "Invoice generated from pending charges",
+        req.requestId,
+      ),
+    );
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function listAdvancesController(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const query = schema.advanceListSchema.parse(req.query);
+    const result = await service.listAdvances(
+      req.auth!.hospitalId,
+      query.patientId,
+      query.availableOnly,
+    );
+    res.json(
+      successResponse(
+        result,
+        "Advance payments retrieved successfully",
+        req.requestId,
+      ),
+    );
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function applyAdvanceController(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const { id } = schema.idParamsSchema.parse(req.params);
+    const input = schema.applyAdvanceSchema.parse(req.body);
+
+    const result = await service.applyAdvanceToInvoice(
+      req.auth!.hospitalId,
+      id,
+      req.auth!.userId,
+      input.amount,
+    );
+
+    res.json(
+      successResponse(
+        result,
+        "Advance applied to invoice successfully",
+        req.requestId,
+      ),
+    );
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function listRefundsController(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const query = schema.refundListSchema.parse(req.query);
+    const result = await service.listRefunds(
+      req.auth!.hospitalId,
+      query.status,
+    );
+    res.json(
+      successResponse(
+        result,
+        "Refunds retrieved successfully",
+        req.requestId,
+      ),
+    );
+  } catch (error) {
+    next(error);
+  }
+}

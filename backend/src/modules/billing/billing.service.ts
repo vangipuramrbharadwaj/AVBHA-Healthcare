@@ -1,5 +1,6 @@
 import { nextBillingAdvanceNumber, nextBillingInvoiceNumber, nextBillingReceiptNumber, nextBillingRefundNumber } from "../../shared/sequences/document-number.presets";
 import {
+  BillingChargeStatus,
   BillingInvoiceStatus,
   BillingLedgerEntryType,
   BillingPaymentMode,
@@ -841,4 +842,768 @@ export async function dashboard(
       outstanding._sum.balanceAmount ?? 0,
     ),
   };
+}
+
+
+function doctorName(doctor: {
+  title?: string | null;
+  firstName?: string | null;
+  middleName?: string | null;
+  lastName?: string | null;
+  doctorCode?: string | null;
+}) {
+  return [
+    doctor.title,
+    doctor.firstName,
+    doctor.middleName,
+    doctor.lastName,
+  ].filter(Boolean).join(" ") || doctor.doctorCode || "Doctor";
+}
+
+async function upsertPendingCharge(input: {
+  hospitalId: string;
+  branchId: string;
+  patientId: string;
+  opdVisitId?: string | null;
+  ipdAdmissionId?: string | null;
+  serviceId?: string | null;
+  sourceModule: string;
+  sourceEntityId?: string | null;
+  sourceKey: string;
+  description: string;
+  quantity: number;
+  unitPrice: number;
+  taxPercent?: number | null;
+  discountPercent?: number | null;
+  chargeDate: Date;
+  userId?: string | undefined;
+}) {
+  if (input.quantity <= 0 || input.unitPrice <= 0) {
+    return null;
+  }
+
+  const base = input.quantity * input.unitPrice;
+  const discountAmount =
+    input.discountPercent != null
+      ? (base * input.discountPercent) / 100
+      : 0;
+  const taxable = base - discountAmount;
+  const taxAmount =
+    input.taxPercent != null
+      ? (taxable * input.taxPercent) / 100
+      : 0;
+  const lineTotal = taxable + taxAmount;
+
+  const existing = await prisma.billingCharge.findUnique({
+    where: {
+      hospitalId_sourceKey: {
+        hospitalId: input.hospitalId,
+        sourceKey: input.sourceKey,
+      },
+    },
+  });
+
+  if (existing?.status === BillingChargeStatus.INVOICED) {
+    return existing;
+  }
+
+  const data = {
+    branchId: input.branchId,
+    patientId: input.patientId,
+    sourceModule: input.sourceModule,
+    sourceKey: input.sourceKey,
+    description: input.description,
+    quantity: input.quantity,
+    unitPrice: input.unitPrice,
+    discountAmount,
+    taxAmount,
+    lineTotal,
+    chargeDate: input.chargeDate,
+    status: BillingChargeStatus.PENDING,
+    ...(input.userId ? { updatedBy: input.userId } : {}),
+    ...(input.opdVisitId !== undefined
+      ? { opdVisitId: input.opdVisitId }
+      : {}),
+    ...(input.ipdAdmissionId !== undefined
+      ? { ipdAdmissionId: input.ipdAdmissionId }
+      : {}),
+    ...(input.serviceId !== undefined
+      ? { serviceId: input.serviceId }
+      : {}),
+    ...(input.sourceEntityId !== undefined
+      ? { sourceEntityId: input.sourceEntityId }
+      : {}),
+    ...(input.taxPercent !== undefined
+      ? { taxPercent: input.taxPercent }
+      : {}),
+    ...(input.discountPercent !== undefined
+      ? { discountPercent: input.discountPercent }
+      : {}),
+  };
+
+  if (existing) {
+    return prisma.billingCharge.update({
+      where: { id: existing.id },
+      data,
+    });
+  }
+
+  return prisma.billingCharge.create({
+    data: {
+      hospitalId: input.hospitalId,
+      ...(input.userId ? { createdBy: input.userId } : {}),
+      ...data,
+    },
+  });
+}
+
+export async function syncCharges(
+  hospitalId: string,
+  userId?: string,
+) {
+  const [
+    opdVisits,
+    labItems,
+    radiologyItems,
+    pharmacyItems,
+    bedAllocations,
+    otBookings,
+  ] = await Promise.all([
+    prisma.opdVisit.findMany({
+      where: {
+        hospitalId,
+        deletedAt: null,
+        status: { not: "CANCELLED" },
+      },
+      include: {
+        doctor: true,
+      },
+    }),
+    prisma.labOrderItem.findMany({
+      where: {
+        hospitalId,
+        status: { not: "CANCELLED" },
+        order: { hospitalId },
+      },
+      include: {
+        test: true,
+        order: true,
+      },
+    }),
+    prisma.radiologyOrderItem.findMany({
+      where: {
+        hospitalId,
+        status: { not: "CANCELLED" },
+        order: { hospitalId },
+      },
+      include: {
+        procedure: true,
+        order: true,
+      },
+    }),
+    prisma.pharmacyDispenseItem.findMany({
+      where: {
+        hospitalId,
+        dispense: {
+          hospitalId,
+          status: "COMPLETED",
+        },
+      },
+      include: {
+        medicine: true,
+        dispense: true,
+      },
+    }),
+    prisma.ipdBedAllocation.findMany({
+      where: {
+        hospitalId,
+        status: { not: "CANCELLED" },
+        admission: {
+          hospitalId,
+          deletedAt: null,
+        },
+      },
+      include: {
+        admission: true,
+        bed: {
+          include: {
+            room: true,
+          },
+        },
+      },
+    }),
+    prisma.otBooking.findMany({
+      where: {
+        hospitalId,
+        status: "COMPLETED",
+      },
+      include: {
+        procedure: true,
+      },
+    }),
+  ]);
+
+  let createdOrUpdated = 0;
+
+  for (const visit of opdVisits) {
+    const fee =
+      visit.visitType === "EMERGENCY"
+        ? Number(visit.doctor.emergencyFee ?? visit.doctor.consultationFee)
+        : ["FOLLOW_UP", "REVIEW"].includes(visit.visitType)
+          ? Number(visit.doctor.followupFee ?? visit.doctor.consultationFee)
+          : Number(visit.doctor.consultationFee);
+
+    if (fee > 0) {
+      await upsertPendingCharge({
+        hospitalId,
+        branchId: visit.branchId,
+        patientId: visit.patientId,
+        opdVisitId: visit.id,
+        sourceModule: "OPD",
+        sourceEntityId: visit.id,
+        sourceKey: `OPD:${visit.id}:CONSULTATION`,
+        description: `${doctorName(visit.doctor)} consultation`,
+        quantity: 1,
+        unitPrice: fee,
+        chargeDate: visit.visitDate,
+        userId,
+      });
+      createdOrUpdated += 1;
+    }
+  }
+
+  for (const item of labItems) {
+    const price = Number(item.price ?? item.test.price ?? 0);
+    if (price <= 0) continue;
+
+    await upsertPendingCharge({
+      hospitalId,
+      branchId: item.order.branchId,
+      patientId: item.order.patientId,
+      ipdAdmissionId: item.order.ipdAdmissionId,
+      sourceModule: "LABORATORY",
+      sourceEntityId: item.id,
+      sourceKey: `LAB:${item.id}`,
+      description: `Laboratory - ${item.test.testName}`,
+      quantity: 1,
+      unitPrice: price,
+      chargeDate: item.order.orderedAt,
+      userId,
+    });
+    createdOrUpdated += 1;
+  }
+
+  for (const item of radiologyItems) {
+    const price = Number(item.price ?? item.procedure.price ?? 0);
+    if (price <= 0) continue;
+
+    await upsertPendingCharge({
+      hospitalId,
+      branchId: item.order.branchId,
+      patientId: item.order.patientId,
+      opdVisitId: item.order.opdVisitId,
+      ipdAdmissionId: item.order.ipdAdmissionId,
+      sourceModule: "RADIOLOGY",
+      sourceEntityId: item.id,
+      sourceKey: `RAD:${item.id}`,
+      description: `Radiology - ${item.procedure.procedureName}`,
+      quantity: 1,
+      unitPrice: price,
+      chargeDate: item.order.requestedAt,
+      userId,
+    });
+    createdOrUpdated += 1;
+  }
+
+  for (const item of pharmacyItems) {
+    const price = Number(item.unitPrice);
+    const quantity = Number(item.dispensedQuantity);
+    if (price <= 0 || quantity <= 0) continue;
+
+    await upsertPendingCharge({
+      hospitalId,
+      branchId: item.dispense.branchId,
+      patientId: item.dispense.patientId,
+      opdVisitId: item.dispense.opdVisitId,
+      ipdAdmissionId: item.dispense.ipdAdmissionId,
+      sourceModule: "PHARMACY",
+      sourceEntityId: item.id,
+      sourceKey: `PHARMACY:${item.id}`,
+      description: `Pharmacy - ${item.medicine.brandName || item.medicine.genericName}`,
+      quantity,
+      unitPrice: price,
+      chargeDate: item.dispense.dispensedAt ?? item.createdAt,
+      userId,
+    });
+    createdOrUpdated += 1;
+  }
+
+  const millisecondsPerDay = 24 * 60 * 60 * 1000;
+
+  for (const allocation of bedAllocations) {
+    const dailyCharge = Number(
+      allocation.bed.dailyCharge ??
+      allocation.bed.room.dailyCharge ??
+      0,
+    );
+    if (dailyCharge <= 0) continue;
+
+    const end =
+      allocation.releasedAt ??
+      allocation.admission.dischargedAt ??
+      new Date();
+    const elapsed = Math.max(
+      millisecondsPerDay,
+      end.getTime() - allocation.allocatedAt.getTime(),
+    );
+    const days = Math.max(1, Math.ceil(elapsed / millisecondsPerDay));
+
+    await upsertPendingCharge({
+      hospitalId,
+      branchId: allocation.admission.branchId,
+      patientId: allocation.admission.patientId,
+      ipdAdmissionId: allocation.admissionId,
+      sourceModule: "IPD_BED",
+      sourceEntityId: allocation.id,
+      sourceKey: `IPD_BED:${allocation.id}`,
+      description: `Bed / Room - ${allocation.bed.room.roomName} / ${allocation.bed.bedName}`,
+      quantity: days,
+      unitPrice: dailyCharge,
+      chargeDate: allocation.allocatedAt,
+      userId,
+    });
+    createdOrUpdated += 1;
+  }
+
+  for (const booking of otBookings) {
+    const charge = Number(booking.procedure.baseCharge ?? 0);
+    if (charge <= 0) continue;
+
+    await upsertPendingCharge({
+      hospitalId,
+      branchId: booking.branchId,
+      patientId: booking.patientId,
+      opdVisitId: booking.opdVisitId,
+      ipdAdmissionId: booking.ipdAdmissionId,
+      sourceModule: "OPERATION_THEATRE",
+      sourceEntityId: booking.id,
+      sourceKey: `OT:${booking.id}`,
+      description: `OT - ${booking.procedure.procedureName}`,
+      quantity: 1,
+      unitPrice: charge,
+      chargeDate: booking.actualEnd ?? booking.scheduledStart,
+      userId,
+    });
+    createdOrUpdated += 1;
+  }
+
+  return {
+    synchronized: createdOrUpdated,
+    sourceCounts: {
+      opd: opdVisits.length,
+      laboratory: labItems.length,
+      radiology: radiologyItems.length,
+      pharmacy: pharmacyItems.length,
+      bedAllocations: bedAllocations.length,
+      operationTheatre: otBookings.length,
+    },
+  };
+}
+
+export async function listCharges(
+  hospitalId: string,
+  query: {
+    status: BillingChargeStatus;
+    patientId?: string;
+    ipdAdmissionId?: string;
+    opdVisitId?: string;
+  },
+) {
+  return prisma.billingCharge.findMany({
+    where: {
+      hospitalId,
+      status: query.status,
+      ...(query.patientId ? { patientId: query.patientId } : {}),
+      ...(query.ipdAdmissionId
+        ? { ipdAdmissionId: query.ipdAdmissionId }
+        : {}),
+      ...(query.opdVisitId ? { opdVisitId: query.opdVisitId } : {}),
+    },
+    include: {
+      patient: true,
+      branch: true,
+      service: true,
+      invoice: {
+        select: {
+          id: true,
+          invoiceNumber: true,
+          status: true,
+        },
+      },
+    },
+    orderBy: [
+      { patientId: "asc" },
+      { chargeDate: "asc" },
+    ],
+  });
+}
+
+export async function createInvoiceFromCharges(
+  hospitalId: string,
+  userId: string,
+  input: {
+    chargeIds: string[];
+    discountAmount: number;
+    roundOffAmount: number;
+    notes?: string | null;
+  },
+) {
+  const charges = await prisma.billingCharge.findMany({
+    where: {
+      hospitalId,
+      id: { in: input.chargeIds },
+      status: BillingChargeStatus.PENDING,
+    },
+  });
+
+  if (charges.length !== new Set(input.chargeIds).size) {
+    throw new AppError(
+      "One or more selected charges are unavailable or already invoiced",
+      400,
+      "BILLING_CHARGE_NOT_AVAILABLE",
+    );
+  }
+
+  const patientIds = new Set(charges.map((charge) => charge.patientId));
+  const branchIds = new Set(charges.map((charge) => charge.branchId));
+
+  if (patientIds.size !== 1 || branchIds.size !== 1) {
+    throw new AppError(
+      "Selected charges must belong to the same patient and branch",
+      400,
+      "BILLING_CHARGE_MIXED_CONTEXT",
+    );
+  }
+
+  const patientId = charges[0]!.patientId;
+  const branchId = charges[0]!.branchId;
+  const invoiceNumber = await nextNumber(hospitalId, "INV", "invoice");
+
+  const subtotal = charges.reduce(
+    (total, charge) =>
+      total + Number(charge.quantity) * Number(charge.unitPrice) -
+      Number(charge.discountAmount),
+    0,
+  );
+  const taxAmount = charges.reduce(
+    (total, charge) => total + Number(charge.taxAmount),
+    0,
+  );
+  const totalAmount =
+    subtotal +
+    taxAmount -
+    input.discountAmount +
+    input.roundOffAmount;
+
+  if (totalAmount < 0) {
+    throw new AppError(
+      "Invoice total cannot be negative",
+      400,
+      "BILLING_INVALID_TOTAL",
+    );
+  }
+
+  const ipdIds = Array.from(
+    new Set(
+      charges
+        .map((charge) => charge.ipdAdmissionId)
+        .filter((id): id is string => Boolean(id)),
+    ),
+  );
+  const opdIds = Array.from(
+    new Set(
+      charges
+        .map((charge) => charge.opdVisitId)
+        .filter((id): id is string => Boolean(id)),
+    ),
+  );
+
+  return prisma.$transaction(async (transaction) => {
+    const invoice = await transaction.billingInvoice.create({
+      data: {
+        hospitalId,
+        branchId,
+        patientId,
+        invoiceNumber,
+        status: BillingInvoiceStatus.ISSUED,
+        subtotal,
+        taxAmount,
+        discountAmount: input.discountAmount,
+        roundOffAmount: input.roundOffAmount,
+        totalAmount,
+        paidAmount: 0,
+        balanceAmount: totalAmount,
+        createdBy: userId,
+        updatedBy: userId,
+        ...(ipdIds.length === 1
+          ? { ipdAdmissionId: ipdIds[0] }
+          : {}),
+        ...(opdIds.length === 1 && ipdIds.length === 0
+          ? { opdVisitId: opdIds[0] }
+          : {}),
+        ...(input.notes !== undefined
+          ? { notes: input.notes }
+          : {}),
+        items: {
+          create: charges.map((charge) => ({
+            hospitalId,
+            serviceId: charge.serviceId,
+            sourceModule: charge.sourceModule,
+            sourceEntityId: charge.sourceEntityId,
+            description: charge.description,
+            quantity: charge.quantity,
+            unitPrice: charge.unitPrice,
+            discountPercent: charge.discountPercent,
+            discountAmount: charge.discountAmount,
+            taxPercent: charge.taxPercent,
+            taxAmount: charge.taxAmount,
+            lineTotal: charge.lineTotal,
+          })),
+        },
+      },
+      include: {
+        items: true,
+        patient: true,
+      },
+    });
+
+    await transaction.billingCharge.updateMany({
+      where: {
+        hospitalId,
+        id: { in: input.chargeIds },
+        status: BillingChargeStatus.PENDING,
+      },
+      data: {
+        status: BillingChargeStatus.INVOICED,
+        invoiceId: invoice.id,
+        updatedBy: userId,
+      },
+    });
+
+    await addLedgerEntry(transaction, {
+      hospitalId,
+      branchId,
+      patientId,
+      entryType: BillingLedgerEntryType.INVOICE,
+      referenceType: "BILLING_INVOICE",
+      referenceId: invoice.id,
+      description: `Invoice ${invoice.invoiceNumber}`,
+      debitAmount: totalAmount,
+      createdBy: userId,
+    });
+
+    return invoice;
+  });
+}
+
+export async function listAdvances(
+  hospitalId: string,
+  patientId?: string,
+  availableOnly = false,
+) {
+  const advances = await prisma.billingAdvancePayment.findMany({
+    where: {
+      hospitalId,
+      ...(patientId ? { patientId } : {}),
+      ...(availableOnly
+        ? { balanceAmount: { gt: 0 } }
+        : {}),
+    },
+    orderBy: { receivedAt: "desc" },
+  });
+
+  if (advances.length === 0) {
+    return [];
+  }
+
+  const patientIds = Array.from(
+    new Set(advances.map((advance) => advance.patientId)),
+  );
+  const branchIds = Array.from(
+    new Set(advances.map((advance) => advance.branchId)),
+  );
+
+  const [patients, branches] = await Promise.all([
+    prisma.patient.findMany({
+      where: {
+        hospitalId,
+        id: { in: patientIds },
+        deletedAt: null,
+      },
+    }),
+    prisma.hospitalBranch.findMany({
+      where: {
+        hospitalId,
+        id: { in: branchIds },
+        deletedAt: null,
+      },
+    }),
+  ]);
+
+  const patientMap = new Map(
+    patients.map((patient) => [patient.id, patient]),
+  );
+  const branchMap = new Map(
+    branches.map((branch) => [branch.id, branch]),
+  );
+
+  return advances.map((advance) => ({
+    ...advance,
+    patient: patientMap.get(advance.patientId) ?? null,
+    branch: branchMap.get(advance.branchId) ?? null,
+  }));
+}
+
+export async function applyAdvanceToInvoice(
+  hospitalId: string,
+  invoiceId: string,
+  userId: string,
+  requestedAmount?: number,
+) {
+  const invoice = await prisma.billingInvoice.findFirst({
+    where: {
+      id: invoiceId,
+      hospitalId,
+      status: {
+        in: [
+          BillingInvoiceStatus.ISSUED,
+          BillingInvoiceStatus.PARTIALLY_PAID,
+        ],
+      },
+    },
+  });
+
+  if (!invoice) {
+    throw new AppError(
+      "Payable invoice was not found",
+      404,
+      "BILLING_INVOICE_NOT_PAYABLE",
+    );
+  }
+
+  const advances = await prisma.billingAdvancePayment.findMany({
+    where: {
+      hospitalId,
+      patientId: invoice.patientId,
+      balanceAmount: { gt: 0 },
+    },
+    orderBy: { receivedAt: "asc" },
+  });
+
+  const available = advances.reduce(
+    (sum, advance) => sum + Number(advance.balanceAmount),
+    0,
+  );
+  const invoiceBalance = Number(invoice.balanceAmount);
+  const amount = Math.min(
+    requestedAmount ?? invoiceBalance,
+    invoiceBalance,
+    available,
+  );
+
+  if (amount <= 0) {
+    throw new AppError(
+      "No available advance balance for this patient",
+      400,
+      "BILLING_NO_ADVANCE_BALANCE",
+    );
+  }
+
+  const receiptNumber = await nextNumber(
+    hospitalId,
+    "RCT",
+    "payment",
+  );
+
+  return prisma.$transaction(async (transaction) => {
+    let remaining = amount;
+
+    for (const advance of advances) {
+      if (remaining <= 0) break;
+
+      const balance = Number(advance.balanceAmount);
+      const useAmount = Math.min(balance, remaining);
+
+      await transaction.billingAdvancePayment.update({
+        where: { id: advance.id },
+        data: {
+          utilizedAmount:
+            Number(advance.utilizedAmount) + useAmount,
+          balanceAmount: balance - useAmount,
+        },
+      });
+
+      remaining -= useAmount;
+    }
+
+    const payment = await transaction.billingPayment.create({
+      data: {
+        hospitalId,
+        branchId: invoice.branchId,
+        invoiceId: invoice.id,
+        patientId: invoice.patientId,
+        receiptNumber,
+        paymentMode: BillingPaymentMode.ADVANCE,
+        status: BillingPaymentStatus.COMPLETED,
+        amount,
+        receivedBy: userId,
+        remarks: "Applied from patient advance balance",
+      },
+    });
+
+    const paidAmount = Number(invoice.paidAmount) + amount;
+    const balanceAmount = Math.max(
+      0,
+      Number(invoice.totalAmount) - paidAmount,
+    );
+
+    await transaction.billingInvoice.update({
+      where: { id: invoice.id },
+      data: {
+        paidAmount,
+        balanceAmount,
+        status:
+          balanceAmount <= 0
+            ? BillingInvoiceStatus.PAID
+            : BillingInvoiceStatus.PARTIALLY_PAID,
+        updatedBy: userId,
+      },
+    });
+
+    return {
+      payment,
+      appliedAmount: amount,
+      remainingInvoiceBalance: balanceAmount,
+    };
+  });
+}
+
+export async function listRefunds(
+  hospitalId: string,
+  status?: BillingRefundStatus,
+) {
+  return prisma.billingRefund.findMany({
+    where: {
+      hospitalId,
+      ...(status ? { status } : {}),
+    },
+    include: {
+      invoice: {
+        include: {
+          patient: true,
+        },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+  });
 }

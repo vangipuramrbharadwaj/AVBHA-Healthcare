@@ -133,6 +133,7 @@ model Hospital {
 
   otBookings OtBooking[]
 
+  billingCharges BillingCharge[]
   @@map("hospitals")
 }
 
@@ -174,6 +175,7 @@ model HospitalBranch {
   billingInvoices         BillingInvoice[]
   otBookings              OtBooking[]
 
+  billingCharges BillingCharge[]
   @@unique([hospitalId, branchCode])
   @@index([hospitalId])
   @@map("hospital_branches")
@@ -755,6 +757,7 @@ model Patient {
   billingInvoices         BillingInvoice[]
   otBookings              OtBooking[]
 
+  billingCharges BillingCharge[]
   @@unique([hospitalId, uhid])
   @@index([hospitalId, status])
   @@index([hospitalId, primaryMobile])
@@ -2778,6 +2781,12 @@ enum BillingPaymentStatus {
   REFUNDED
 }
 
+enum BillingChargeStatus {
+  PENDING
+  INVOICED
+  CANCELLED
+}
+
 enum BillingLedgerEntryType {
   INVOICE
   PAYMENT
@@ -2814,6 +2823,7 @@ model BillingServiceCatalog {
   deletedAt       DateTime?    @map("deleted_at")
 
   invoiceItems BillingInvoiceItem[]
+  charges      BillingCharge[]
 
   @@unique([hospitalId, serviceCode])
   @@index([hospitalId, moduleCode])
@@ -2854,6 +2864,7 @@ model BillingInvoice {
   items    BillingInvoiceItem[]
   payments BillingPayment[]
   refunds  BillingRefund[]
+  charges  BillingCharge[]
 
   @@unique([hospitalId, invoiceNumber])
   @@index([hospitalId, invoiceDate])
@@ -2958,6 +2969,49 @@ model BillingAdvancePayment {
   @@unique([hospitalId, advanceNumber])
   @@index([patientId, receivedAt])
   @@map("billing_advance_payments")
+}
+
+model BillingCharge {
+  id             String              @id @default(uuid()) @db.Uuid
+  hospitalId     String              @map("hospital_id") @db.Uuid
+  branchId       String              @map("branch_id") @db.Uuid
+  patientId      String              @map("patient_id") @db.Uuid
+  opdVisitId     String?             @map("opd_visit_id") @db.Uuid
+  ipdAdmissionId String?             @map("ipd_admission_id") @db.Uuid
+  serviceId      String?             @map("service_id") @db.Uuid
+  invoiceId      String?             @map("invoice_id") @db.Uuid
+
+  sourceModule   String              @map("source_module") @db.VarChar(50)
+  sourceEntityId String?             @map("source_entity_id") @db.Uuid
+  sourceKey      String              @map("source_key") @db.VarChar(180)
+  description    String              @db.VarChar(300)
+  quantity       Decimal             @default(1) @db.Decimal(12, 3)
+  unitPrice      Decimal             @map("unit_price") @db.Decimal(14, 2)
+  discountPercent Decimal?           @map("discount_percent") @db.Decimal(5, 2)
+  discountAmount Decimal             @default(0) @map("discount_amount") @db.Decimal(14, 2)
+  taxPercent     Decimal?            @map("tax_percent") @db.Decimal(5, 2)
+  taxAmount      Decimal             @default(0) @map("tax_amount") @db.Decimal(14, 2)
+  lineTotal      Decimal             @map("line_total") @db.Decimal(14, 2)
+  status         BillingChargeStatus @default(PENDING)
+  chargeDate     DateTime            @default(now()) @map("charge_date")
+  createdAt      DateTime            @default(now()) @map("created_at")
+  createdBy      String?             @map("created_by") @db.Uuid
+  updatedAt      DateTime            @updatedAt @map("updated_at")
+  updatedBy      String?             @map("updated_by") @db.Uuid
+
+  hospital Hospital               @relation(fields: [hospitalId], references: [id], onDelete: Restrict)
+  branch   HospitalBranch         @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  patient  Patient                @relation(fields: [patientId], references: [id], onDelete: Restrict)
+  service  BillingServiceCatalog? @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+  invoice  BillingInvoice?        @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+
+  @@unique([hospitalId, sourceKey])
+  @@index([hospitalId, status, chargeDate])
+  @@index([patientId, status])
+  @@index([ipdAdmissionId, status])
+  @@index([opdVisitId, status])
+  @@index([invoiceId])
+  @@map("billing_charges")
 }
 
 model BillingPatientLedger {
